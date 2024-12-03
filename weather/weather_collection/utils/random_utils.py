@@ -1,7 +1,7 @@
 import logging
 import requests
 
-from music_collection.utils.logger import configure_logger
+from weather_collection.utils.logger import configure_logger
 
 logger = logging.getLogger(__name__)
 configure_logger(logger)

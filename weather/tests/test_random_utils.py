@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-from music_collection.utils.random_utils import get_random
+from weather_collection.utils.random_utils import get_random
 
 
 RANDOM_NUMBER = 42

@@ -1,7 +1,7 @@
 import logging
 from typing import List
-from music_collection.models.song_model import Song, update_play_count
-from music_collection.utils.logger import configure_logger
+from weather.weather_collection.models.location_model import Song, update_play_count
+from weather_collection.utils.logger import configure_logger
 
 logger = logging.getLogger(__name__)
 configure_logger(logger)

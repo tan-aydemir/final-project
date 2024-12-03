@@ -4,7 +4,7 @@ import sqlite3
 
 import pytest
 
-from music_collection.models.song_model import (
+from weather.weather_collection.models.location_model import (
     Song,
     create_song,
     clear_catalog,

@@ -1,9 +1,9 @@
 from dotenv import load_dotenv
 from flask import Flask, jsonify, make_response, Response, request
 
-from music_collection.models import song_model
-from music_collection.models.playlist_model import PlaylistModel
-from music_collection.utils.sql_utils import check_database_connection, check_table_exists
+from weather.weather_collection.models import location_model
+from weather.weather_collection.models.favorites_model import PlaylistModel
+from weather_collection.utils.sql_utils import check_database_connection, check_table_exists
 
 
 # Load environment variables from .env file
@@ -93,7 +93,7 @@ def add_song() -> Response:
 
         # Add the song to the playlist
         app.logger.info('Adding song: %s - %s', artist, title)
-        song_model.create_song(artist=artist, title=title, year=year, genre=genre, duration=duration)
+        location_model.create_song(artist=artist, title=title, year=year, genre=genre, duration=duration)
         app.logger.info("Song added to playlist: %s - %s", artist, title)
         return make_response(jsonify({'status': 'success', 'song': title}), 201)
     except Exception as e:
@@ -110,7 +110,7 @@ def clear_catalog() -> Response:
     """
     try:
         app.logger.info("Clearing the song catalog")
-        song_model.clear_catalog()
+        location_model.clear_catalog()
         return make_response(jsonify({'status': 'success'}), 200)
     except Exception as e:
         app.logger.error(f"Error clearing catalog: {e}")
@@ -129,7 +129,7 @@ def delete_song(song_id: int) -> Response:
     """
     try:
         app.logger.info(f"Deleting song by ID: {song_id}")
-        song_model.delete_song(song_id)
+        location_model.delete_song(song_id)
         return make_response(jsonify({'status': 'success'}), 200)
     except Exception as e:
         app.logger.error(f"Error deleting song: {e}")
@@ -152,7 +152,7 @@ def get_all_songs() -> Response:
         sort_by_play_count = request.args.get('sort_by_play_count', 'false').lower() == 'true'
 
         app.logger.info("Retrieving all songs from the catalog, sort_by_play_count=%s", sort_by_play_count)
-        songs = song_model.get_all_songs(sort_by_play_count=sort_by_play_count)
+        songs = location_model.get_all_songs(sort_by_play_count=sort_by_play_count)
 
         return make_response(jsonify({'status': 'success', 'songs': songs}), 200)
     except Exception as e:
@@ -173,7 +173,7 @@ def get_song_by_id(song_id: int) -> Response:
     """
     try:
         app.logger.info(f"Retrieving song by ID: {song_id}")
-        song = song_model.get_song_by_id(song_id)
+        song = location_model.get_song_by_id(song_id)
         return make_response(jsonify({'status': 'success', 'song': song}), 200)
     except Exception as e:
         app.logger.error(f"Error retrieving song by ID: {e}")
@@ -208,7 +208,7 @@ def get_song_by_compound_key() -> Response:
             return make_response(jsonify({'error': 'Year must be an integer'}), 400)
 
         app.logger.info(f"Retrieving song by compound key: {artist}, {title}, {year}")
-        song = song_model.get_song_by_compound_key(artist, title, year)
+        song = location_model.get_song_by_compound_key(artist, title, year)
         return make_response(jsonify({'status': 'success', 'song': song}), 200)
 
     except Exception as e:
@@ -225,7 +225,7 @@ def get_random_song() -> Response:
     """
     try:
         app.logger.info("Retrieving a random song from the catalog")
-        song = song_model.get_random_song()
+        song = location_model.get_random_song()
         return make_response(jsonify({'status': 'success', 'song': song}), 200)
     except Exception as e:
         app.logger.error(f"Error retrieving a random song: {e}")
@@ -262,7 +262,7 @@ def add_song_to_playlist() -> Response:
             return make_response(jsonify({'error': 'Invalid input. Artist, title, and year are required.'}), 400)
 
         # Lookup the song by compound key
-        song = song_model.get_song_by_compound_key(artist, title, year)
+        song = location_model.get_song_by_compound_key(artist, title, year)
 
         # Add song to playlist
         playlist_model.add_song_to_playlist(song)
@@ -298,7 +298,7 @@ def remove_song_by_song_id() -> Response:
             return make_response(jsonify({'error': 'Invalid input. Artist, title, and year are required.'}), 400)
 
         # Lookup the song by compound key
-        song = song_model.get_song_by_compound_key(artist, title, year)
+        song = location_model.get_song_by_compound_key(artist, title, year)
 
         # Remove song from playlist
         playlist_model.remove_song_by_song_id(song.id)
@@ -592,7 +592,7 @@ def move_song_to_beginning() -> Response:
         app.logger.info(f"Moving song to beginning: {artist} - {title} ({year})")
 
         # Retrieve song by compound key and move it to the beginning
-        song = song_model.get_song_by_compound_key(artist, title, year)
+        song = location_model.get_song_by_compound_key(artist, title, year)
         playlist_model.move_song_to_beginning(song.id)
 
         return make_response(jsonify({'status': 'success', 'song': f'{artist} - {title}'}), 200)
@@ -623,7 +623,7 @@ def move_song_to_end() -> Response:
         app.logger.info(f"Moving song to end: {artist} - {title} ({year})")
 
         # Retrieve song by compound key and move it to the end
-        song = song_model.get_song_by_compound_key(artist, title, year)
+        song = location_model.get_song_by_compound_key(artist, title, year)
         playlist_model.move_song_to_end(song.id)
 
         return make_response(jsonify({'status': 'success', 'song': f'{artist} - {title}'}), 200)
@@ -656,7 +656,7 @@ def move_song_to_track_number() -> Response:
         app.logger.info(f"Moving song to track number {track_number}: {artist} - {title} ({year})")
 
         # Retrieve song by compound key and move it to the specified track number
-        song = song_model.get_song_by_compound_key(artist, title, year)
+        song = location_model.get_song_by_compound_key(artist, title, year)
         playlist_model.move_song_to_track_number(song.id, track_number)
 
         return make_response(jsonify({'status': 'success', 'song': f'{artist} - {title}', 'track_number': track_number}), 200)
@@ -718,7 +718,7 @@ def get_song_leaderboard() -> Response:
     """
     try:
         app.logger.info("Generating song leaderboard sorted")
-        leaderboard_data = song_model.get_all_songs(sort_by_play_count=True)
+        leaderboard_data = location_model.get_all_songs(sort_by_play_count=True)
         return make_response(jsonify({'status': 'success', 'leaderboard': leaderboard_data}), 200)
     except Exception as e:
         app.logger.error(f"Error generating leaderboard: {e}")
