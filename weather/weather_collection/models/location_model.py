@@ -3,9 +3,9 @@ import logging
 import os
 import sqlite3
 
-from music_collection.utils.logger import configure_logger
-from music_collection.utils.random_utils import get_random
-from music_collection.utils.sql_utils import get_db_connection
+from weather_collection.utils.logger import configure_logger
+from weather_collection.utils.random_utils import get_random
+from weather_collection.utils.sql_utils import get_db_connection
 
 
 logger = logging.getLogger(__name__)
