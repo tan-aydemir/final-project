@@ -44,8 +44,11 @@ def create_location(name: str, current_temp: float, high: float, low: float, win
         sqlite3.Error: For any other database errors.
     """
     # Validate the required fields
-    if not isinstance(wind, float) or wind < 0:
-        raise ValueError(f"Invalid speed for wind is provided: {wind} must be a positive value.")
+    if not name or not isinstance(name, str):
+        raise ValueError("Invalid name provided. Name must be a non-empty string.")
+    if wind < 0:
+        raise ValueError("Invalid wind speed. Wind speed must be greater than or equal to 0.")
+
     try:
         # Use the context manager to handle the database connection
         with get_db_connection() as conn:
