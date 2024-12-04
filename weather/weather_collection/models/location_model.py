@@ -39,8 +39,8 @@ def create_location(name: str, current_temp: float, high: float, low: float, win
         forecast (str): Forecast Report (sunny, cloudy, windy...)
 
     Raises:
-        ValueError: If year or duration are invalid.
-        sqlite3.IntegrityError: If a song with the same compound key (artist, title, year) already exists.
+        ValueError: If location is invalid.
+        sqlite3.IntegrityError: If a location with the same compound key (location) already exists.
         sqlite3.Error: For any other database errors.
     """
     # Validate the required fields
