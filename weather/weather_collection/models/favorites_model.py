@@ -63,7 +63,7 @@ class FavoritesModel:
         """
         logger.info("Removing location by name: %s", name)
         self.check_if_empty()
-        name = self.validate_favorites_name(name)
+        name = self.validate_location_name(name)
         location_to_remove = next((loc for loc in self.favorites if loc.title == name), None)
 
         if not location_to_remove:
@@ -86,7 +86,7 @@ class FavoritesModel:
         """
         logger.info("Removing location %d from favorites", favorites)
         self.check_if_empty()
-        favorites = self.validate_favorites_name(favorites)
+        favorites = self.validate_location_name(favorites)
         favorites_index = favorites - 1
         logger.info("Removing location: %s", self.favorites[favorites_index].title)
         del self.favorites[favorites_index]
@@ -112,7 +112,7 @@ class FavoritesModel:
         logger.info("Getting all locations in the favorites")
         return self.favorites
 
-    def get_location_by_id(self, location_id: int) -> Location:
+    def get_location_by_id_in_favorites(self, location_id: int) -> Location:
         """
         Retrieves a location from the favorites by its location ID.
 
@@ -127,7 +127,7 @@ class FavoritesModel:
         logger.info("Getting location with id %d from favorites", location_id)
         return next((location for location in self.favorites if location.id == location_id), None)
 
-    def get_location_by_name(self, name: str) -> Location:
+    def get_location_by_name_in_favorites(self, name: str) -> Location:
         """
         Retrieves a location from the favorites by its name.
 
@@ -139,7 +139,7 @@ class FavoritesModel:
         """
         logger.info("Getting location by name: %s", name)
         self.check_if_empty()
-        name = self.validate_favorites_name(name)
+        name = self.validate_location_name(name)
         location = next((loc for loc in self.favorites if loc.title == name), None)
 
         if not location:
@@ -154,7 +154,7 @@ class FavoritesModel:
         Returns the current location being played.
         """
         self.check_if_empty()
-        return self.get_location_by_name(self.current_location_name)
+        return self.get_location_by_name_in_favorites(self.current_location_name)
 
     def get_favorites_length(self) -> int:
         """
@@ -175,7 +175,7 @@ class FavoritesModel:
         """
         logger.info("Setting current location name to: %s", name)
         self.check_if_empty()
-        name = self.validate_favorites_name(name)
+        name = self.validate_location_name(name)
         self.current_location_name = name
 
     def move_location_to_beginning(self, location_id: int) -> None:
@@ -188,7 +188,7 @@ class FavoritesModel:
         logger.info("Moving location with ID %d to the beginning of the favorites", location_id)
         self.check_if_empty()
         location_id = self.validate_location_id(location_id)
-        location = self.get_location_by_id(location_id)
+        location = self.get_location_by_id_in_favorites(location_id)
         self.favorites.remove(location)
         self.favorites.insert(0, location)
         logger.info("Location with ID %d has been moved to the beginning", location_id)
@@ -203,7 +203,7 @@ class FavoritesModel:
         logger.info("Moving location with ID %d to the end of the favorites", location_id)
         self.check_if_empty()
         location_id = self.validate_location_id(location_id)
-        location = self.get_location_by_id(location_id)
+        location = self.get_location_by_id_in_favorites(location_id)
         self.favorites.remove(location)
         self.favorites.append(location)
         logger.info("Location with ID %d has been moved to the end", location_id)
@@ -229,8 +229,8 @@ class FavoritesModel:
             logger.error("Cannot swap a location with itself, both location IDs are the same: %d", location1_id)
             raise ValueError(f"Cannot swap a location with itself, both location IDs are the same: {location1_id}")
 
-        song1 = self.get_location_by_id(location1_id)
-        song2 = self.get_location_by_id(location2_id)
+        song1 = self.get_location_by_id_in_favorites(location1_id)
+        song2 = self.get_location_by_id_in_favorites(location2_id)
         index1 = self.favorites.index(song1)
         index2 = self.favorites.index(song2)
         self.favorites[index1], self.favorites[index2] = self.favorites[index2], self.favorites[index1]
@@ -282,7 +282,7 @@ class FavoritesModel:
         return location_id
 
 
-    def validate_favorites_name(self, name: str) -> str:
+    def validate_location_name(self, name: str) -> str:
         """
         Validates the given name, ensuring it is a non-empty string.
 
