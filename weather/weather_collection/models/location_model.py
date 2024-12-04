@@ -13,60 +13,56 @@ configure_logger(logger)
 
 
 @dataclass
-class Song:
+class Location:
     id: int
-    artist: str
-    title: str
-    year: int
-    genre: str
-    duration: int  # in seconds
-
+    name: str
+    current_temp: float
+    high: float
+    low: float  # in seconds
+    wind: float # wind speed
+    forecast: str
+    
     def __post_init__(self):
-        if self.duration <= 0:
-            raise ValueError(f"Duration must be greater than 0, got {self.duration}")
-        if self.year <= 1900:
-            raise ValueError(f"Year must be greater than 1900, got {self.year}")
+        if self.wind < 0:
+            raise ValueError(f"Wind speed should be greater than 0, got {self.wind}")
 
-
-def create_song(artist: str, title: str, year: int, genre: str, duration: int) -> None:
+def create_location(name: str, current_temp: float, high: float, low: float, wind: float, forecast: str) -> None:
     """
-    Creates a new song in the songs table.
+    Creates a new location in the locations table.
 
     Args:
-        artist (str): The artist's name.
-        title (str): The song title.
-        year (int): The year the song was released.
-        genre (str): The song genre.
-        duration (int): The duration of the song in seconds.
+        name (str): Name of Location.
+        current_temp (float): Current temperature
+        high (int): Daily High temperature
+        low (str): Daily Low temperature
+        wind (int): Speed of Wind
+        forecast (str): Forecast Report (sunny, cloudy, windy...)
 
     Raises:
-        ValueError: If year or duration are invalid.
-        sqlite3.IntegrityError: If a song with the same compound key (artist, title, year) already exists.
+        ValueError: If location is invalid.
+        sqlite3.IntegrityError: If a location with the same compound key (location) already exists.
         sqlite3.Error: For any other database errors.
     """
     # Validate the required fields
-    if not isinstance(year, int) or year < 1900:
-        raise ValueError(f"Invalid year provided: {year} (must be an integer greater than or equal to 1900).")
-    if not isinstance(duration, int) or duration <= 0:
-        raise ValueError(f"Invalid song duration: {duration} (must be a positive integer).")
-
+    if not isinstance(wind, float) or wind < 0:
+        raise ValueError(f"Invalid speed for wind is provided: {wind} must be a positive value.")
     try:
         # Use the context manager to handle the database connection
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO songs (artist, title, year, genre, duration)
+                INSERT INTO locations (name, current_temp, high, low, wind, forecast)
                 VALUES (?, ?, ?, ?, ?)
-            """, (artist, title, year, genre, duration))
+            """, (name, current_temp, high, low, wind, forecast))
             conn.commit()
 
-            logger.info("Song created successfully: %s - %s (%d)", artist, title, year)
+            logger.info("Location created successfully: %s - %s (%d)", name)
 
     except sqlite3.IntegrityError as e:
-        logger.error("Song with artist '%s', title '%s', and year %d already exists.", artist, title, year)
-        raise ValueError(f"Song with artist '{artist}', title '{title}', and year {year} already exists.") from e
+        logger.error(f"Location [{name}] already exists")
+        raise ValueError(f"Location [{name}] already exists") from e
     except sqlite3.Error as e:
-        logger.error("Database error while creating song: %s", str(e))
+        logger.error("Database error while creating Location: %s", str(e))
         raise sqlite3.Error(f"Database error: {str(e)}")
 
 def clear_catalog() -> None:
