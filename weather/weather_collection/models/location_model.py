@@ -16,27 +16,16 @@ configure_logger(logger)
 class Location:
     id: int
     name: str
-    current_temp: float
-    high: float
-    low: float  # in seconds
-    wind: float # wind speed
-    forecast: str
     
     def __post_init__(self):
-        if self.wind < 0:
-            raise ValueError(f"Wind speed should be greater than 0, got {self.wind}")
+        if not isinstance(self.name, str):
+            raise ValueError(f"Name must be a string: {self.wind}")
 
-def create_location(name: str, current_temp: float, high: float, low: float, wind: float, forecast: str) -> None:
+def create_location(name: str) -> None:
     """
     Creates a new location in the locations table.
-
     Args:
-        name (str): Name of Location.
-        current_temp (float): Current temperature
-        high (int): Daily High temperature
-        low (str): Daily Low temperature
-        wind (int): Speed of Wind
-        forecast (str): Forecast Report (sunny, cloudy, windy...)
+        name (str): Create a new location by name
 
     Raises:
         ValueError: If location is invalid.
@@ -46,17 +35,15 @@ def create_location(name: str, current_temp: float, high: float, low: float, win
     # Validate the required fields
     if not name or not isinstance(name, str):
         raise ValueError("Invalid name provided. Name must be a non-empty string.")
-    if wind < 0:
-        raise ValueError("Invalid wind speed. Wind speed must be greater than or equal to 0.")
-
+    
     try:
         # Use the context manager to handle the database connection
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO locations (name, current_temp, high, low, wind, forecast)
-                VALUES (?, ?, ?, ?, ?)
-            """, (name, current_temp, high, low, wind, forecast))
+                INSERT INTO locations (name)
+                VALUES (?)
+            """, (name))
             conn.commit()
 
             logger.info("Location created successfully: %s - %s (%d)", name)
@@ -70,148 +57,105 @@ def create_location(name: str, current_temp: float, high: float, low: float, win
 
 def clear_catalog() -> None:
     """
-    Recreates the songs table, effectively deleting all songs.
+    Recreates the locations table, effectively deleting all locations.
 
     Raises:
         sqlite3.Error: If any database error occurs.
     """
     try:
-        with open(os.getenv("SQL_CREATE_TABLE_PATH", "/app/sql/create_song_table.sql"), "r") as fh:
+        with open(os.getenv("SQL_CREATE_TABLE_PATH", "/app/sql/create_location_table.sql"), "r") as fh:
             create_table_script = fh.read()
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.executescript(create_table_script)
             conn.commit()
 
-            logger.info("Catalog cleared successfully.")
+            logger.info("Location catalog cleared successfully.")
 
     except sqlite3.Error as e:
         logger.error("Database error while clearing catalog: %s", str(e))
         raise e
 
-def delete_song(song_id: int) -> None:
+def delete_location(location_id: int) -> None:
     """
-    Soft deletes a song from the catalog by marking it as deleted.
+    Soft deletes a location from the catalog by marking it as deleted.
 
     Args:
-        song_id (int): The ID of the song to delete.
+        location_id (int): The name of the Location to delete.
 
     Raises:
-        ValueError: If the song with the given ID does not exist or is already marked as deleted.
+        ValueError: If the location id in the table does not exist or is already marked as deleted.
         sqlite3.Error: If any database error occurs.
     """
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
 
-            # Check if the song exists and if it's already deleted
-            cursor.execute("SELECT deleted FROM songs WHERE id = ?", (song_id,))
+            # Check if the location exists and if it's already deleted
+            cursor.execute("SELECT deleted FROM locations WHERE id = ?", (location_id,))
             try:
                 deleted = cursor.fetchone()[0]
                 if deleted:
-                    logger.info("Song with ID %s has already been deleted", song_id)
-                    raise ValueError(f"Song with ID {song_id} has already been deleted")
+                    logger.info("Location with id: %s has already been deleted", location_id)
+                    raise ValueError(f"Location with id: {location_id} has already been deleted")
             except TypeError:
-                logger.info("Song with ID %s not found", song_id)
-                raise ValueError(f"Song with ID {song_id} not found")
+                logger.info("Location with id: %s not found", location_id)
+                raise ValueError(f"Location with id: {location_id} not found")
 
             # Perform the soft delete by setting 'deleted' to TRUE
-            cursor.execute("UPDATE songs SET deleted = TRUE WHERE id = ?", (song_id,))
+            cursor.execute("UPDATE locations SET deleted = TRUE WHERE id = ?", (location_id,))
             conn.commit()
 
-            logger.info("Song with ID %s marked as deleted.", song_id)
+            logger.info("Location with id: %s marked as deleted.", location_id)
 
     except sqlite3.Error as e:
-        logger.error("Database error while deleting song: %s", str(e))
+        logger.error("Database error while deleting location: %s", str(e))
         raise e
 
-def get_song_by_id(song_id: int) -> Song:
+def get_location_by_id(location_id: int) -> Location:
     """
-    Retrieves a song from the catalog by its song ID.
+    Retrieves a location from the catalog by its location id.
 
     Args:
-        song_id (int): The ID of the song to retrieve.
+        location_id (int): The id for the location to receive 
 
     Returns:
-        Song: The Song object corresponding to the song_id.
+        Location: The Location object corresponding to the location_id variable
 
     Raises:
-        ValueError: If the song is not found or is marked as deleted.
+        ValueError: If the location isnt found or is marked as deleted.
     """
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            logger.info("Attempting to retrieve song with ID %s", song_id)
+            logger.info("Attempting to retrieve location with ID %s", location_id)
             cursor.execute("""
-                SELECT id, artist, title, year, genre, duration, deleted
-                FROM songs
+                SELECT id, name, deleted
+                FROM locations
                 WHERE id = ?
-            """, (song_id,))
+            """, (location_id,))
             row = cursor.fetchone()
 
             if row:
-                if row[6]:  # deleted flag
-                    logger.info("Song with ID %s has been deleted", song_id)
-                    raise ValueError(f"Song with ID {song_id} has been deleted")
-                logger.info("Song with ID %s found", song_id)
-                return Song(id=row[0], artist=row[1], title=row[2], year=row[3], genre=row[4], duration=row[5])
+                if row[2]:  # deleted flag
+                    logger.info("Location with ID %s has been deleted", location_id)
+                    raise ValueError(f"Location with ID {location_id} has been deleted")
+                logger.info("Location with ID %s found", location_id)
+                return Location(id=row[0], name=row[1])
             else:
-                logger.info("Song with ID %s not found", song_id)
-                raise ValueError(f"Song with ID {song_id} not found")
+                logger.info("Location with ID %s not found", location_id)
+                raise ValueError(f"Location with ID {location_id} not found")
 
     except sqlite3.Error as e:
-        logger.error("Database error while retrieving song by ID %s: %s", song_id, str(e))
+        logger.error("Database error while retrieving location by ID %s: %s", location_id, str(e))
         raise e
 
-def get_song_by_compound_key(artist: str, title: str, year: int) -> Song:
+def get_all_locations() -> list[dict]:
     """
-    Retrieves a song from the catalog by its compound key (artist, title, year).
-
-    Args:
-        artist (str): The artist of the song.
-        title (str): The title of the song.
-        year (int): The year of the song.
+    Retrieves all locations that are not marked as deleted from the catalog.
 
     Returns:
-        Song: The Song object corresponding to the compound key.
-
-    Raises:
-        ValueError: If the song is not found or is marked as deleted.
-    """
-    try:
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            logger.info("Attempting to retrieve song with artist '%s', title '%s', and year %d", artist, title, year)
-            cursor.execute("""
-                SELECT id, artist, title, year, genre, duration, deleted
-                FROM songs
-                WHERE artist = ? AND title = ? AND year = ?
-            """, (artist, title, year))
-            row = cursor.fetchone()
-
-            if row:
-                if row[6]:  # deleted flag
-                    logger.info("Song with artist '%s', title '%s', and year %d has been deleted", artist, title, year)
-                    raise ValueError(f"Song with artist '{artist}', title '{title}', and year {year} has been deleted")
-                logger.info("Song with artist '%s', title '%s', and year %d found", artist, title, year)
-                return Song(id=row[0], artist=row[1], title=row[2], year=row[3], genre=row[4], duration=row[5])
-            else:
-                logger.info("Song with artist '%s', title '%s', and year %d not found", artist, title, year)
-                raise ValueError(f"Song with artist '{artist}', title '{title}', and year {year} not found")
-
-    except sqlite3.Error as e:
-        logger.error("Database error while retrieving song by compound key (artist '%s', title '%s', year %d): %s", artist, title, year, str(e))
-        raise e
-
-def get_all_songs(sort_by_play_count: bool = False) -> list[dict]:
-    """
-    Retrieves all songs that are not marked as deleted from the catalog.
-
-    Args:
-        sort_by_play_count (bool): If True, sort the songs by play count in descending order.
-
-    Returns:
-        list[dict]: A list of dictionaries representing all non-deleted songs with play_count.
+        list[dict]: A list of dictionaries representing all non-deleted locations.
 
     Logs:
         Warning: If the catalog is empty.
@@ -219,112 +163,64 @@ def get_all_songs(sort_by_play_count: bool = False) -> list[dict]:
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            logger.info("Attempting to retrieve all non-deleted songs from the catalog")
+            logger.info("Attempting to retrieve all non-deleted locations from the catalog")
 
             # Determine the sort order based on the 'sort_by_play_count' flag
             query = """
-                SELECT id, artist, title, year, genre, duration, play_count
-                FROM songs
+                SELECT id, name
+                FROM locations
                 WHERE deleted = FALSE
             """
-            if sort_by_play_count:
-                query += " ORDER BY play_count DESC"
-
+            
             cursor.execute(query)
             rows = cursor.fetchall()
 
             if not rows:
-                logger.warning("The song catalog is empty.")
+                logger.warning("The location catalog is empty.")
                 return []
 
-            songs = [
+            locations = [
                 {
                     "id": row[0],
-                    "artist": row[1],
-                    "title": row[2],
-                    "year": row[3],
-                    "genre": row[4],
-                    "duration": row[5],
-                    "play_count": row[6],
+                    "name": row[1],
                 }
                 for row in rows
             ]
-            logger.info("Retrieved %d songs from the catalog", len(songs))
-            return songs
+            logger.info("Retrieved %d locations from the catalog", len(locations))
+            return locations
 
     except sqlite3.Error as e:
-        logger.error("Database error while retrieving all songs: %s", str(e))
+        logger.error("Database error while retrieving all locations: %s", str(e))
         raise e
 
-def get_random_song() -> Song:
+def get_random_location() -> Location:
     """
-    Retrieves a random song from the catalog.
+    Retrieves a random location from the catalog - A Feature For Feeling Lucky
 
     Returns:
-        Song: A randomly selected Song object.
+        Location: A randomly selected Location object.
 
     Raises:
         ValueError: If the catalog is empty.
     """
     try:
-        all_songs = get_all_songs()
+        all_locations = get_all_locations()
 
-        if not all_songs:
-            logger.info("Cannot retrieve random song because the song catalog is empty.")
-            raise ValueError("The song catalog is empty.")
+        if not all_locations:
+            logger.info("Cannot retrieve random Location because the location catalog is empty.")
+            raise ValueError("The location catalog is empty.")
 
         # Get a random index using the random.org API
-        random_index = get_random(len(all_songs))
-        logger.info("Random index selected: %d (total songs: %d)", random_index, len(all_songs))
+        random_index = get_random(len(all_locations))
+        logger.info("Random index selected: %d (total locations: %d)", random_index, len(all_locations))
 
-        # Return the song at the random index, adjust for 0-based indexing
-        song_data = all_songs[random_index - 1]
-        return Song(
-            id=song_data["id"],
-            artist=song_data["artist"],
-            title=song_data["title"],
-            year=song_data["year"],
-            genre=song_data["genre"],
-            duration=song_data["duration"]
+        # Return the location at the random index, adjust for 0-based indexing
+        location_data = all_locations[random_index - 1]
+        return Location(
+            id=location_data["id"],
+            name=location_data["name"],
         )
 
     except Exception as e:
-        logger.error("Error while retrieving random song: %s", str(e))
-        raise e
-
-def update_play_count(song_id: int) -> None:
-    """
-    Increments the play count of a song by song ID.
-
-    Args:
-        song_id (int): The ID of the song whose play count should be incremented.
-
-    Raises:
-        ValueError: If the song does not exist or is marked as deleted.
-        sqlite3.Error: If there is a database error.
-    """
-    try:
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            logger.info("Attempting to update play count for song with ID %d", song_id)
-
-            # Check if the song exists and if it's deleted
-            cursor.execute("SELECT deleted FROM songs WHERE id = ?", (song_id,))
-            try:
-                deleted = cursor.fetchone()[0]
-                if deleted:
-                    logger.info("Song with ID %d has been deleted", song_id)
-                    raise ValueError(f"Song with ID {song_id} has been deleted")
-            except TypeError:
-                logger.info("Song with ID %d not found", song_id)
-                raise ValueError(f"Song with ID {song_id} not found")
-
-            # Increment the play count
-            cursor.execute("UPDATE songs SET play_count = play_count + 1 WHERE id = ?", (song_id,))
-            conn.commit()
-
-            logger.info("Play count incremented for song with ID: %d", song_id)
-
-    except sqlite3.Error as e:
-        logger.error("Database error while updating play count for song with ID %d: %s", song_id, str(e))
+        logger.error("Error while retrieving random location: %s", str(e))
         raise e
