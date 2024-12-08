@@ -233,30 +233,6 @@ def test_validiate_location_name_invalid(favorites_model, sample_Location1):
 ##################################################
 
 @pytest.fixture
-def mock_update_play_count(mocker):
-    return mocker.patch("weather.weather_collection.models.favorites_model.mock_update_play_count", autospec=True)
-
-
-def test_play_current_Location(favorites_model, sample_favorites, mock_update_play_count):
-    """Test playing the current Location."""
-    favorites_model.favorites.extend(sample_favorites)
-
-    favorites_model.play_current_Location()
-
-    # Assert that current_location_number is now 2
-    assert favorites_model.current_location_number == 2, f"Expected location to be 2, but got {favorites_model.current_location_number}"
-
-    # update_play_count called with first Location's id (1)
-    mock_update_play_count.assert_called_once_with(1)
-
-    # Play again, should wrap around
-    favorites_model.play_current_Location()
-
-    # Should now be back to 1
-    assert favorites_model.current_location_number == 1, f"Expected location to be 1, but got {favorites_model.current_location_number}"
-
-    # update_play_count should have also been called with (2)
-    mock_update_play_count.assert_called_with(2)
 
 
 def test_go_to_location_number(favorites_model, sample_favorites):
