@@ -40,7 +40,7 @@ def mock_cursor(mocker):
     def mock_get_db_connection():
         yield mock_conn  # Yield the mocked connection object
 
-    mocker.patch("music_collection.models.location_model.get_db_connection", mock_get_db_connection)
+    mocker.patch("weather_collection.models.location_model.get_db_connection", mock_get_db_connection)
 
     return mock_cursor  # Return the mock cursor so we can set expectations per test
 
@@ -74,7 +74,7 @@ def test_create_location(mock_cursor):
     assert actual_arguments == expected_arguments, f"The SQL query arguments did not match. Expected {expected_arguments}, got {actual_arguments}."
 
 def test_create_location_duplicate(mock_cursor):
-    """Test creating a location with a duplicate artist, title, and year (should raise an error)."""
+    """Test creating a location with a duplicate location (should raise an error)."""
 
     # Simulate that the database will raise an IntegrityError due to a duplicate entry
     mock_cursor.execute.side_effect = sqlite3.IntegrityError("UNIQUE constraint failed: locations.name")
@@ -121,7 +121,7 @@ def test_delete_location_bad_id(mock_cursor):
     mock_cursor.fetchone.return_value = None
 
     # Expect a ValueError when attempting to delete a non-existent location
-    with pytest.raises(ValueError, match="Song with ID 999 not found"):
+    with pytest.raises(ValueError, match="Location with ID 999 not found"):
         delete_location(999)
 
 def test_delete_location_already_deleted(mock_cursor):
@@ -153,7 +153,7 @@ def test_clear_catalog(mock_cursor, mocker):
 
 ######################################################
 #
-#    Get Song
+#    Get location
 #
 ######################################################
 
@@ -207,9 +207,9 @@ def test_get_all_locations(mock_cursor):
 
     # Ensure the results match the expected output
     expected_result = [
-        {"id": 1, "artist": "Boston"},
-        {"id": 2, "artist": "Istanbul"},
-        {"id": 3, "artist": "Bergen"}
+        {"id": 1, "Location": "Boston"},
+        {"id": 2, "Location": "Istanbul"},
+        {"id": 3, "Location": "Bergen"}
     ]
 
     assert locations == expected_result, f"Expected {expected_result}, but got {locations}"
@@ -257,7 +257,7 @@ def test_get_random_location(mock_cursor, mocker):
     ]
 
     # Mock random number generation to return the 2nd location
-    mock_random = mocker.patch("music_collection.models.location_model.get_random", return_value=2)
+    mock_random = mocker.patch("weather_collection.models.location_model.get_random", return_value=2)
 
     # Call the get_random_location method
     result = get_random_location()
