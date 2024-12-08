@@ -58,45 +58,41 @@ clear_catalog() {
   curl -s -X DELETE "$BASE_URL/clear-catalog" | grep -q '"status": "success"'
 }
 
-create_song() {
-  artist=$1
-  title=$2
-  year=$3
-  genre=$4
-  duration=$5
+create_location() {
+  name=$1
 
-  echo "Adding song ($artist - $title, $year) to the playlist..."
+  echo "Adding location ($name) to the catalog..."
   curl -s -X POST "$BASE_URL/create-song" -H "Content-Type: application/json" \
-    -d "{\"artist\":\"$artist\", \"title\":\"$title\", \"year\":$year, \"genre\":\"$genre\", \"duration\":$duration}" | grep -q '"status": "success"'
+    -d "{\"name\": \"$1\"}" | grep -q '"status": "success"'
 
   if [ $? -eq 0 ]; then
-    echo "Song added successfully."
+    echo "Location added successfully."
   else
-    echo "Failed to add song."
+    echo "Failed to add location."
     exit 1
   fi
 }
 
-delete_song_by_id() {
-  song_id=$1
+delete_location() {
+  location_id=$1
 
-  echo "Deleting song by ID ($song_id)..."
-  response=$(curl -s -X DELETE "$BASE_URL/delete-song/$song_id")
+  echo "Deleting location by ID ($location_id)..."
+  response=$(curl -s -X DELETE "$BASE_URL/delete-location/$location_id")
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "Song deleted successfully by ID ($song_id)."
+    echo "Location deleted successfully by ID ($location_id)."
   else
-    echo "Failed to delete song by ID ($song_id)."
+    echo "Failed to delete location by ID ($location_id)."
     exit 1
   fi
 }
 
-get_all_songs() {
-  echo "Getting all songs in the playlist..."
-  response=$(curl -s -X GET "$BASE_URL/get-all-songs-from-catalog")
+get_all_locations() {
+  echo "Getting all locations in the playlist..."
+  response=$(curl -s -X GET "$BASE_URL/get-all-locations-from-catalog")
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "All songs retrieved successfully."
+    echo "All locations retrieved successfully."
     if [ "$ECHO_JSON" = true ]; then
-      echo "Songs JSON:"
+      echo "Locations JSON:"
       echo "$response" | jq .
     fi
   else
@@ -105,19 +101,19 @@ get_all_songs() {
   fi
 }
 
-get_song_by_id() {
-  song_id=$1
+get_location_by_id() {
+  location_id=$1
 
-  echo "Getting song by ID ($song_id)..."
-  response=$(curl -s -X GET "$BASE_URL/get-song-from-catalog-by-id/$song_id")
+  echo "Getting location by ID ($location_id)..."
+  response=$(curl -s -X GET "$BASE_URL/get-location-from-catalog-by-id/$location_id")
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "Song retrieved successfully by ID ($song_id)."
+    echo "Location retrieved successfully by ID ($location_id)."
     if [ "$ECHO_JSON" = true ]; then
-      echo "Song JSON (ID $song_id):"
+      echo "Location JSON (ID $location_id):"
       echo "$response" | jq .
     fi
   else
-    echo "Failed to get song by ID ($song_id)."
+    echo "Failed to get location by ID ($location_id)."
     exit 1
   fi
 }
@@ -266,16 +262,14 @@ check_db
 clear_catalog
 
 # Create songs
-create_song "The Beatles" "Hey Jude" 1968 "Rock" 180
-create_song "The Rolling Stones" "Paint It Black" 1966 "Rock" 180
-create_song "The Beatles" "Let It Be" 1970 "Rock" 180
-create_song "Queen" "Bohemian Rhapsody" 1975 "Rock" 180
-create_song "Led Zeppelin" "Stairway to Heaven" 1971 "Rock" 180
+create_location "Boston"
+create_location "Washington"
+create_location "New York"
 
-delete_song_by_id 1
-get_all_songs
+delete_location 1
+get_all_locations
 
-get_song_by_id 2
+get_location_by_id 2
 get_song_by_compound_key "The Beatles" "Let It Be" 1970
 get_random_song
 
