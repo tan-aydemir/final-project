@@ -5,15 +5,13 @@ import sqlite3
 import pytest
 
 from weather.weather_collection.models.location_model import (
-    Song,
-    create_song,
+    Location,
+    create_location,
     clear_catalog,
-    delete_song,
-    get_song_by_id,
-    get_song_by_compound_key,
-    get_all_songs,
-    get_random_song,
-    update_play_count
+    delete_location,
+    get_location_by_id,
+    get_all_locations,
+    get_random_location
 )
 
 ######################################################
@@ -42,7 +40,7 @@ def mock_cursor(mocker):
     def mock_get_db_connection():
         yield mock_conn  # Yield the mocked connection object
 
-    mocker.patch("music_collection.models.song_model.get_db_connection", mock_get_db_connection)
+    mocker.patch("music_collection.models.location_model.get_db_connection", mock_get_db_connection)
 
     return mock_cursor  # Return the mock cursor so we can set expectations per test
 
@@ -52,15 +50,15 @@ def mock_cursor(mocker):
 #
 ######################################################
 
-def test_create_song(mock_cursor):
-    """Test creating a new song in the catalog."""
+def test_create_location(mock_cursor):
+    """Test creating a new location in the catalog."""
 
-    # Call the function to create a new song
-    create_song(artist="Artist Name", title="Song Title", year=2022, genre="Pop", duration=180)
+    # Call the function to create a new location
+    create_location(name="Boston")
 
     expected_query = normalize_whitespace("""
-        INSERT INTO songs (artist, title, year, genre, duration)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO locations (name)
+        VALUES (?)
     """)
 
     actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
@@ -72,53 +70,31 @@ def test_create_song(mock_cursor):
     actual_arguments = mock_cursor.execute.call_args[0][1]
 
     # Assert that the SQL query was executed with the correct arguments
-    expected_arguments = ("Artist Name", "Song Title", 2022, "Pop", 180)
+    expected_arguments = ("Boston")
     assert actual_arguments == expected_arguments, f"The SQL query arguments did not match. Expected {expected_arguments}, got {actual_arguments}."
 
-def test_create_song_duplicate(mock_cursor):
-    """Test creating a song with a duplicate artist, title, and year (should raise an error)."""
+def test_create_location_duplicate(mock_cursor):
+    """Test creating a location with a duplicate artist, title, and year (should raise an error)."""
 
     # Simulate that the database will raise an IntegrityError due to a duplicate entry
-    mock_cursor.execute.side_effect = sqlite3.IntegrityError("UNIQUE constraint failed: songs.artist, songs.title, songs.year")
+    mock_cursor.execute.side_effect = sqlite3.IntegrityError("UNIQUE constraint failed: locations.name")
 
     # Expect the function to raise a ValueError with a specific message when handling the IntegrityError
-    with pytest.raises(ValueError, match="Song with artist 'Artist Name', title 'Song Title', and year 2022 already exists."):
-        create_song(artist="Artist Name", title="Song Title", year=2022, genre="Pop", duration=180)
+    with pytest.raises(ValueError, match="Location with name Boston already exists."):
+        create_location(name="Boston")
 
-def test_create_song_invalid_duration():
-    """Test error when trying to create a song with an invalid duration (e.g., negative duration)"""
+def test_delete_location(mock_cursor):
+    """Test soft deleting a location from the catalog by location ID."""
 
-    # Attempt to create a song with a negative duration
-    with pytest.raises(ValueError, match="Invalid song duration: -180 \(must be a positive integer\)."):
-        create_song(artist="Artist Name", title="Song Title", year=2022, genre="Pop", duration=-180)
-
-    # Attempt to create a song with a non-integer duration
-    with pytest.raises(ValueError, match="Invalid song duration: invalid \(must be a positive integer\)."):
-        create_song(artist="Artist Name", title="Song Title", year=2022, genre="Pop", duration="invalid")
-
-def test_create_song_invalid_year():
-    """Test error when trying to create a song with an invalid year (e.g., less than 1900 or non-integer)."""
-
-    # Attempt to create a song with a year less than 1900
-    with pytest.raises(ValueError, match="Invalid year provided: 1899 \(must be an integer greater than or equal to 1900\)."):
-        create_song(artist="Artist Name", title="Song Title", year=1899, genre="Pop", duration=180)
-
-    # Attempt to create a song with a non-integer year
-    with pytest.raises(ValueError, match="Invalid year provided: invalid \(must be an integer greater than or equal to 1900\)."):
-        create_song(artist="Artist Name", title="Song Title", year="invalid", genre="Pop", duration=180)
-
-def test_delete_song(mock_cursor):
-    """Test soft deleting a song from the catalog by song ID."""
-
-    # Simulate that the song exists (id = 1)
+    # Simulate that the location exists (id = 1)
     mock_cursor.fetchone.return_value = ([False])
 
-    # Call the delete_song function
-    delete_song(1)
+    # Call the delete_location function
+    delete_location(1)
 
     # Normalize the SQL for both queries (SELECT and UPDATE)
-    expected_select_sql = normalize_whitespace("SELECT deleted FROM songs WHERE id = ?")
-    expected_update_sql = normalize_whitespace("UPDATE songs SET deleted = TRUE WHERE id = ?")
+    expected_select_sql = normalize_whitespace("SELECT deleted FROM locations WHERE id = ?")
+    expected_update_sql = normalize_whitespace("UPDATE locations SET deleted = TRUE WHERE id = ?")
 
     # Access both calls to `execute()` using `call_args_list`
     actual_select_sql = normalize_whitespace(mock_cursor.execute.call_args_list[0][0][0])
@@ -138,38 +114,38 @@ def test_delete_song(mock_cursor):
     assert actual_select_args == expected_select_args, f"The SELECT query arguments did not match. Expected {expected_select_args}, got {actual_select_args}."
     assert actual_update_args == expected_update_args, f"The UPDATE query arguments did not match. Expected {expected_update_args}, got {actual_update_args}."
 
-def test_delete_song_bad_id(mock_cursor):
-    """Test error when trying to delete a non-existent song."""
+def test_delete_location_bad_id(mock_cursor):
+    """Test error when trying to delete a non-existent location."""
 
-    # Simulate that no song exists with the given ID
+    # Simulate that no location exists with the given ID
     mock_cursor.fetchone.return_value = None
 
-    # Expect a ValueError when attempting to delete a non-existent song
+    # Expect a ValueError when attempting to delete a non-existent location
     with pytest.raises(ValueError, match="Song with ID 999 not found"):
-        delete_song(999)
+        delete_location(999)
 
-def test_delete_song_already_deleted(mock_cursor):
-    """Test error when trying to delete a song that's already marked as deleted."""
+def test_delete_location_already_deleted(mock_cursor):
+    """Test error when trying to delete a location that's already marked as deleted."""
 
-    # Simulate that the song exists but is already marked as deleted
+    # Simulate that the location exists but is already marked as deleted
     mock_cursor.fetchone.return_value = ([True])
 
-    # Expect a ValueError when attempting to delete a song that's already been deleted
-    with pytest.raises(ValueError, match="Song with ID 999 has already been deleted"):
-        delete_song(999)
+    # Expect a ValueError when attempting to delete a location that's already been deleted
+    with pytest.raises(ValueError, match="Location with ID 999 has already been deleted"):
+        delete_location(999)
 
 def test_clear_catalog(mock_cursor, mocker):
-    """Test clearing the entire song catalog (removes all songs)."""
+    """Test clearing the entire Location catalog (removes all locations)."""
 
     # Mock the file reading
-    mocker.patch.dict('os.environ', {'SQL_CREATE_TABLE_PATH': 'sql/create_song_table.sql'})
+    mocker.patch.dict('os.environ', {'SQL_CREATE_TABLE_PATH': 'sql/create_location_table.sql'})
     mock_open = mocker.patch('builtins.open', mocker.mock_open(read_data="The body of the create statement"))
 
     # Call the clear_database function
     clear_catalog()
 
     # Ensure the file was opened using the environment variable's path
-    mock_open.assert_called_once_with('sql/create_song_table.sql', 'r')
+    mock_open.assert_called_once_with('sql/create_location_table.sql', 'r')
 
     # Verify that the correct SQL script was executed
     mock_cursor.executescript.assert_called_once()
@@ -181,21 +157,21 @@ def test_clear_catalog(mock_cursor, mocker):
 #
 ######################################################
 
-def test_get_song_by_id(mock_cursor):
-    # Simulate that the song exists (id = 1)
-    mock_cursor.fetchone.return_value = (1, "Artist Name", "Song Title", 2022, "Pop", 180, False)
+def test_get_location_by_id(mock_cursor):
+    # Simulate that the location exists (id = 1)
+    mock_cursor.fetchone.return_value = (1, "Boston")
 
     # Call the function and check the result
-    result = get_song_by_id(1)
+    result = get_location_by_id(1)
 
     # Expected result based on the simulated fetchone return value
-    expected_result = Song(1, "Artist Name", "Song Title", 2022, "Pop", 180)
+    expected_result = Location(1, "Boston")
 
     # Ensure the result matches the expected output
     assert result == expected_result, f"Expected {expected_result}, got {result}"
 
     # Ensure the SQL query was executed correctly
-    expected_query = normalize_whitespace("SELECT id, artist, title, year, genre, duration, deleted FROM songs WHERE id = ?")
+    expected_query = normalize_whitespace("SELECT id, name, deleted FROM locations WHERE id = ?")
     actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
 
     # Assert that the SQL query was correct
@@ -208,218 +184,116 @@ def test_get_song_by_id(mock_cursor):
     expected_arguments = (1,)
     assert actual_arguments == expected_arguments, f"The SQL query arguments did not match. Expected {expected_arguments}, got {actual_arguments}."
 
-def test_get_song_by_id_bad_id(mock_cursor):
-    # Simulate that no song exists for the given ID
+def test_get_location_by_id_bad_id(mock_cursor):
+    # Simulate that no location exists for the given ID
     mock_cursor.fetchone.return_value = None
 
-    # Expect a ValueError when the song is not found
-    with pytest.raises(ValueError, match="Song with ID 999 not found"):
-        get_song_by_id(999)
+    # Expect a ValueError when the location is not found
+    with pytest.raises(ValueError, match="Location with ID 999 not found"):
+        get_location_by_id(999)
 
-def test_get_song_by_compound_key(mock_cursor):
-    # Simulate that the song exists (artist = "Artist Name", title = "Song Title", year = 2022)
-    mock_cursor.fetchone.return_value = (1, "Artist Name", "Song Title", 2022, "Pop", 180, False)
+def test_get_all_locations(mock_cursor):
+    """Test retrieving all locations that are not marked as deleted."""
 
-    # Call the function and check the result
-    result = get_song_by_compound_key("Artist Name", "Song Title", 2022)
-
-    # Expected result based on the simulated fetchone return value
-    expected_result = Song(1, "Artist Name", "Song Title", 2022, "Pop", 180)
-
-    # Ensure the result matches the expected output
-    assert result == expected_result, f"Expected {expected_result}, got {result}"
-
-    # Ensure the SQL query was executed correctly
-    expected_query = normalize_whitespace("SELECT id, artist, title, year, genre, duration, deleted FROM songs WHERE artist = ? AND title = ? AND year = ?")
-    actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
-
-    # Assert that the SQL query was correct
-    assert actual_query == expected_query, "The SQL query did not match the expected structure."
-
-    # Extract the arguments used in the SQL call
-    actual_arguments = mock_cursor.execute.call_args[0][1]
-
-    # Assert that the SQL query was executed with the correct arguments
-    expected_arguments = ("Artist Name", "Song Title", 2022)
-    assert actual_arguments == expected_arguments, f"The SQL query arguments did not match. Expected {expected_arguments}, got {actual_arguments}."
-
-def test_get_all_songs(mock_cursor):
-    """Test retrieving all songs that are not marked as deleted."""
-
-    # Simulate that there are multiple songs in the database
+    # Simulate that there are multiple locations in the database
     mock_cursor.fetchall.return_value = [
-        (1, "Artist A", "Song A", 2020, "Rock", 210, 10, False),
-        (2, "Artist B", "Song B", 2021, "Pop", 180, 20, False),
-        (3, "Artist C", "Song C", 2022, "Jazz", 200, 5, False)
+        (1, "Boston", False),
+        (2, "Istanbul", False),
+        (3, "Bergen", False)
     ]
 
-    # Call the get_all_songs function
-    songs = get_all_songs()
+    # Call the get_all_locations function
+    locations = get_all_locations()
 
     # Ensure the results match the expected output
     expected_result = [
-        {"id": 1, "artist": "Artist A", "title": "Song A", "year": 2020, "genre": "Rock", "duration": 210, "play_count": 10},
-        {"id": 2, "artist": "Artist B", "title": "Song B", "year": 2021, "genre": "Pop", "duration": 180, "play_count": 20},
-        {"id": 3, "artist": "Artist C", "title": "Song C", "year": 2022, "genre": "Jazz", "duration": 200, "play_count": 5}
+        {"id": 1, "artist": "Boston"},
+        {"id": 2, "artist": "Istanbul"},
+        {"id": 3, "artist": "Bergen"}
     ]
 
-    assert songs == expected_result, f"Expected {expected_result}, but got {songs}"
+    assert locations == expected_result, f"Expected {expected_result}, but got {locations}"
 
     # Ensure the SQL query was executed correctly
     expected_query = normalize_whitespace("""
-        SELECT id, artist, title, year, genre, duration, play_count
-        FROM songs
+        SELECT id, name
+        FROM locations
         WHERE deleted = FALSE
     """)
     actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
 
     assert actual_query == expected_query, "The SQL query did not match the expected structure."
 
-def test_get_all_songs_empty_catalog(mock_cursor, caplog):
-    """Test that retrieving all songs returns an empty list when the catalog is empty and logs a warning."""
+def test_get_all_locations_empty_catalog(mock_cursor, caplog):
+    """Test that retrieving all locations returns an empty list when the catalog is empty and logs a warning."""
 
-    # Simulate that the catalog is empty (no songs)
+    # Simulate that the catalog is empty (no locations found)
     mock_cursor.fetchall.return_value = []
 
-    # Call the get_all_songs function
-    result = get_all_songs()
+    # Call the get_all_locations function
+    result = get_all_locations()
 
     # Ensure the result is an empty list
     assert result == [], f"Expected empty list, but got {result}"
 
     # Ensure that a warning was logged
-    assert "The song catalog is empty." in caplog.text, "Expected warning about empty catalog not found in logs."
+    assert "The locations catalog is empty." in caplog.text, "Expected warning about empty catalog not found in logs."
 
     # Ensure the SQL query was executed correctly
-    expected_query = normalize_whitespace("SELECT id, artist, title, year, genre, duration, play_count FROM songs WHERE deleted = FALSE")
+    expected_query = normalize_whitespace("SELECT id, name FROM locations WHERE deleted = FALSE")
     actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
 
     # Assert that the SQL query was correct
     assert actual_query == expected_query, "The SQL query did not match the expected structure."
 
-def test_get_all_songs_ordered_by_play_count(mock_cursor):
-    """Test retrieving all songs ordered by play count."""
+def test_get_random_location(mock_cursor, mocker):
+    """Test retrieving a random location from the catalog."""
 
-    # Simulate that there are multiple songs in the database
+    # Simulate that there are multiple locations in the database
     mock_cursor.fetchall.return_value = [
-        (2, "Artist B", "Song B", 2021, "Pop", 180, 20),
-        (1, "Artist A", "Song A", 2020, "Rock", 210, 10),
-        (3, "Artist C", "Song C", 2022, "Jazz", 200, 5)
+        (1, "Boston"),
+        (2, "Istanbul"),
+        (3, "Bergen")
     ]
 
-    # Call the get_all_songs function with sort_by_play_count = True
-    songs = get_all_songs(sort_by_play_count=True)
+    # Mock random number generation to return the 2nd location
+    mock_random = mocker.patch("music_collection.models.location_model.get_random", return_value=2)
 
-    # Ensure the results are sorted by play count
-    expected_result = [
-        {"id": 2, "artist": "Artist B", "title": "Song B", "year": 2021, "genre": "Pop", "duration": 180, "play_count": 20},
-        {"id": 1, "artist": "Artist A", "title": "Song A", "year": 2020, "genre": "Rock", "duration": 210, "play_count": 10},
-        {"id": 3, "artist": "Artist C", "title": "Song C", "year": 2022, "genre": "Jazz", "duration": 200, "play_count": 5}
-    ]
-
-    assert songs == expected_result, f"Expected {expected_result}, but got {songs}"
-
-    # Ensure the SQL query was executed correctly
-    expected_query = normalize_whitespace("""
-        SELECT id, artist, title, year, genre, duration, play_count
-        FROM songs
-        WHERE deleted = FALSE
-        ORDER BY play_count DESC
-    """)
-    actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
-
-    assert actual_query == expected_query, "The SQL query did not match the expected structure."
-
-def test_get_random_song(mock_cursor, mocker):
-    """Test retrieving a random song from the catalog."""
-
-    # Simulate that there are multiple songs in the database
-    mock_cursor.fetchall.return_value = [
-        (1, "Artist A", "Song A", 2020, "Rock", 210, 10),
-        (2, "Artist B", "Song B", 2021, "Pop", 180, 20),
-        (3, "Artist C", "Song C", 2022, "Jazz", 200, 5)
-    ]
-
-    # Mock random number generation to return the 2nd song
-    mock_random = mocker.patch("music_collection.models.song_model.get_random", return_value=2)
-
-    # Call the get_random_song method
-    result = get_random_song()
+    # Call the get_random_location method
+    result = get_random_location()
 
     # Expected result based on the mock random number and fetchall return value
-    expected_result = Song(2, "Artist B", "Song B", 2021, "Pop", 180)
+    expected_result = Location(2, "Istanbul")
 
     # Ensure the result matches the expected output
     assert result == expected_result, f"Expected {expected_result}, got {result}"
 
-    # Ensure that the random number was called with the correct number of songs
+    # Ensure that the random number was called with the correct number of locations
     mock_random.assert_called_once_with(3)
 
     # Ensure the SQL query was executed correctly
-    expected_query = normalize_whitespace("SELECT id, artist, title, year, genre, duration, play_count FROM songs WHERE deleted = FALSE")
+    expected_query = normalize_whitespace("SELECT id, name FROM locations WHERE deleted = FALSE")
     actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
 
     # Assert that the SQL query was correct
     assert actual_query == expected_query, "The SQL query did not match the expected structure."
 
-def test_get_random_song_empty_catalog(mock_cursor, mocker):
-    """Test retrieving a random song when the catalog is empty."""
+def test_get_random_location_empty_catalog(mock_cursor, mocker):
+    """Test retrieving a random location when the catalog is empty."""
 
     # Simulate that the catalog is empty
     mock_cursor.fetchall.return_value = []
 
-    # Expect a ValueError to be raised when calling get_random_song with an empty catalog
-    with pytest.raises(ValueError, match="The song catalog is empty"):
-        get_random_song()
+    # Expect a ValueError to be raised when calling a random location with an empty catalog
+    with pytest.raises(ValueError, match="The location catalog is empty"):
+        get_random_location()
 
-    # Ensure that the random number was not called since there are no songs
-    mocker.patch("music_collection.models.song_model.get_random").assert_not_called()
+    # Ensure that the random number was not called since there are no locations. 
+    mocker.patch("weather_collection.models.location_model.get_random").assert_not_called()
 
     # Ensure the SQL query was executed correctly
-    expected_query = normalize_whitespace("SELECT id, artist, title, year, genre, duration, play_count FROM songs WHERE deleted = FALSE")
+    expected_query = normalize_whitespace("SELECT id, name FROM locations WHERE deleted = FALSE")
     actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
 
     # Assert that the SQL query was correct
     assert actual_query == expected_query, "The SQL query did not match the expected structure."
-
-def test_update_play_count(mock_cursor):
-    """Test updating the play count of a song."""
-
-    # Simulate that the song exists and is not deleted (id = 1)
-    mock_cursor.fetchone.return_value = [False]
-
-    # Call the update_play_count function with a sample song ID
-    song_id = 1
-    update_play_count(song_id)
-
-    # Normalize the expected SQL query
-    expected_query = normalize_whitespace("""
-        UPDATE songs SET play_count = play_count + 1 WHERE id = ?
-    """)
-
-    # Ensure the SQL query was executed correctly
-    actual_query = normalize_whitespace(mock_cursor.execute.call_args_list[1][0][0])
-
-    # Assert that the SQL query was correct
-    assert actual_query == expected_query, "The SQL query did not match the expected structure."
-
-    # Extract the arguments used in the SQL call
-    actual_arguments = mock_cursor.execute.call_args_list[1][0][1]
-
-    # Assert that the SQL query was executed with the correct arguments (song ID)
-    expected_arguments = (song_id,)
-    assert actual_arguments == expected_arguments, f"The SQL query arguments did not match. Expected {expected_arguments}, got {actual_arguments}."
-
-### Test for Updating a Deleted Song:
-def test_update_play_count_deleted_song(mock_cursor):
-    """Test error when trying to update play count for a deleted song."""
-
-    # Simulate that the song exists but is marked as deleted (id = 1)
-    mock_cursor.fetchone.return_value = [True]
-
-    # Expect a ValueError when attempting to update a deleted song
-    with pytest.raises(ValueError, match="Song with ID 1 has been deleted"):
-        update_play_count(1)
-
-    # Ensure that no SQL query for updating play count was executed
-    mock_cursor.execute.assert_called_once_with("SELECT deleted FROM songs WHERE id = ?", (1,))

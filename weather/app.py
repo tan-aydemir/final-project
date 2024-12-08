@@ -1,3 +1,4 @@
+from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from flask import Flask, jsonify, make_response, Response, request
 
@@ -5,7 +6,9 @@ from weather.weather_collection.models import location_model
 from weather.weather_collection.models.favorites_model import FavoritesModel
 from weather_collection.utils.sql_utils import check_database_connection, check_table_exists
 import requests
+from flask_bcrypt import Bcrypt
 import os
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -14,7 +17,88 @@ app = Flask(__name__)
 
 favorites_model = FavoritesModel()
 
+####################################################
+#
+# User Model
+####################################################
 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///weather_api.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Columnn(db.String(80), unique=True, nullable=False)
+    salt = db.Column(db.String(80), nullable=False)
+    hashed_password = db.Column(db.String(120), nullable=False)
+    
+with app.app_context():
+    db.create_all()
+    
+@app.route('/api/create-account', methods=['POST'])
+def create_account():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return jsonify({'error': 'Username and password are required'}), 400
+    
+    if User.query.filter_by(username=username).first():
+        return jsonify({'error': 'Username already exists'}), 400
+    
+    salt = bcrypt.generate_password_hash(username).decode('utf-8')
+    hashed_password = bcrypt.generate_password_hash(password + salt).decode('utf-8')
+    new_user = User(username=username, salt=salt, hashed_password=hashed_password)
+
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({'message': 'Account created successfully'}), 201
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return jsonify({'error': 'Username and password are required'}), 400
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'error': 'Invalid credentials'}), 401
+
+    if bcrypt.check_password_hash(user.hashed_password, password + user.salt):
+        return jsonify({'message': 'Login successful'}), 200
+    else:
+        return jsonify({'error': 'Invalid credentials'}), 401
+    
+@app.route('/api/update-password', methods=['POST'])
+def update_password():
+    data = request.get_json()
+    username = data.get('username')
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+    
+    if not username or not old_password or not new_password:
+        return jsonify({'error': 'All fields are required'}), 400
+    
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'error': 'Invalud credentials'}), 401
+    
+    if bcrypt.check_password_hash(user.hashed_password, old_password + user.salt):
+        new_hashed_password = bcrypt.generate_password_hash(new_password + user.salt).decode('utf-8')
+        user.hashed_password = new_hashed_password
+        db.session.commit()
+        return jsonify({'message': 'Password updated successfully'}), 200
+    else:
+        return jsonify({'error': 'Invalid credentials'}), 401
+
+    
+    
 ####################################################
 #
 # Healthchecks
