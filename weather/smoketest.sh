@@ -363,45 +363,50 @@ get_all_locations_from_favorites() {
 check_health
 check_db
 
-# Clear the catalog
-clear_catalog
-
 # Create locations
-create_location "The Beatles" "Hey Jude" 1968 "Rock" 180
-create_location "The Rolling Stones" "Paint It Black" 1966 "Rock" 180
-create_location "The Beatles" "Let It Be" 1970 "Rock" 180
-create_location "Queen" "Bohemian Rhapsody" 1975 "Rock" 180
-create_location "Led Zeppelin" "Stairway to Heaven" 1971 "Rock" 180
+# Create multiple locations in the catalog using only the 'name' parameter
+create_location "Boston"
+create_location "Seattle"
+create_location "New York"
+create_location "Los Angeles"
+create_location "Chicago"
 
+# Delete a location by its ID (e.g., Boston might be ID=1)
 delete_location_by_id 1
-get_all_locations
 
+# Get all locations from the catalog
+get_all_locations_from_catalog
+
+# Get a location by its ID (assuming Seattle is ID=2)
 get_location_by_id 2
-get_location_by_compound_key "The Beatles" "Let It Be" 1970
+
+# Get a random location from the catalog
 get_random_location
 
-clear_playlist
+# Clear the entire catalog
+clear_catalog
 
-add_location_to_favorites "The Rolling Stones" "Paint It Black" 1966
-add_location_to_favorites "Queen" "Bohemian Rhapsody" 1975
-add_location_to_favorites "Led Zeppelin" "Stairway to Heaven" 1971
-add_location_to_favorites "The Beatles" "Let It Be" 1970
+# Re-add some locations to the catalog before working with favorites
+create_location "Miami"
+create_location "London"
+create_location "Paris"
+create_location "Tokyo"
 
-remove_location_from_favorites "The Beatles" "Let It Be" 1970
-remove_location_by_name 2
+# Add these locations to favorites by name
+add_location_to_favorites "Miami"
+add_location_to_favorites "London"
+add_location_to_favorites "Paris"
+add_location_to_favorites "Tokyo"
 
-get_all_locations_from_playlist
+# Remove a location from favorites by name
+remove_location_from_favorites "Paris"
 
-add_location_to_favorites "Queen" "Bohemian Rhapsody" 1975
-add_location_to_favorites "The Beatles" "Let It Be" 1970
+# Get all locations from favorites
+get_all_locations_from_favorites
 
-move_location_to_beginning "The Beatles" "Let It Be" 1970
-move_location_to_end "Queen" "Bohemian Rhapsody" 1975
-move_location_to_track_number "Led Zeppelin" "Stairway to Heaven" 1971 2
-swap_locations_in_playlist 1 2
+# Clear all favorites
+clear_favorites
 
-get_all_locations_from_playlist
-get_location_from_playlist_by_track_number 1
 
 
 echo "All tests passed successfully!"
