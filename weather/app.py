@@ -252,9 +252,9 @@ def remove_location_by_location_name() -> Response:
 
 
 @app.route('/api/clear-favorites', methods=['POST'])
-def clear_playlist() -> Response:
+def clear_favorites() -> Response:
     """
-    Route to clear all songs from the favorites.
+    Route to clear all locations from the favorites.
 
     Returns:
         JSON response indicating success of the operation or an error message.
@@ -281,7 +281,7 @@ def clear_playlist() -> Response:
 @app.route('/api/get-current-weather-for-favorite/<str:location_name>',methods=['GET'])
 def get_current_weather_for_favorite(name)-> Response:
     """
-    get the current location for a favorite using name
+    get the current weather for a favorite using name
     Args:
         Name(str):The name of the favorite location to get weather.
     Returns:
@@ -298,49 +298,117 @@ def get_current_weather_for_favorite(name)-> Response:
             return make_response(jsonify({'error': "Name is not a valid location"}),500)
         lat = data[0]["lat"]
         lon = data[0]["lon"]
-        req=request.get('https://api.openweathermap.org/data/2.5/weather',paramas={'appid':os.getenv('OPENWEATHER_APIKEY'),'lon':lon,'lat':lat})
+        req=request.get('https://api.openweathermap.org/data/2.5/weather',params={'appid':os.getenv('OPENWEATHER_APIKEY'),'lon':lon,'lat':lat})
         data=req.json()
         return make_response(data,200)
     except Exception as e:
         app.logger.error(f"Error getting weather for favorites: {e}")
         return make_response(jsonify({'error': str(e)}), 500)
-@app.route('/api/play-entire-playlist', methods=['POST'])
-def play_entire_playlist() -> Response:
-    """
-    Route to play all songs in the playlist.
 
+@app.route('/api/get-history-for-favorites/<str:location_name>',methods=['GET'])
+def get_history_for_favorites(name)-> Response:
+    """
+    get the history for favorite locations.
+    Args:
+        Name(str):The name of the favorite location to get its weather history.
     Returns:
-        JSON response indicating success of the operation.
+        JSON response with the weather history of the favorite location.
     Raises:
-        500 error if there is an issue playing the playlist.
+        500 error if there is an issue getting history of current weather for the favorite location.
     """
     try:
-        app.logger.info('Playing entire playlist')
-        playlist_model.play_entire_playlist()
-        return make_response(jsonify({'status': 'success'}), 200)
+        app.logger.info('Getting history for %s',name)
+        favorites_model.get_location_by_name_in_favorites(name)
+        pos=requests.get('http://api.openweathermap.org/geo/1.0/direct',params={'appid':os.getenv('OPENWEATHER_APIKEY'),'q':name})
+        data=pos.json()
+        if len(data) == 0:
+            return make_response(jsonify({'error': "Name is not a valid location"}),500)
+        lat = data[0]["lat"]
+        lon = data[0]["lon"]
+        req=request.get('https://history.openweathermap.org/data/2.5/history/city',params={'appid':os.getenv('OPENWEATHER_APIKEY'),'lon':lon,'lat':lat,'type':'hour'})
+        data=req.json()
+        return make_response(data,200)
     except Exception as e:
-        app.logger.error(f"Error playing playlist: {e}")
+        app.logger.error(f"Error getting history for favorites: {e}")
         return make_response(jsonify({'error': str(e)}), 500)
 
-
-@app.route('/api/get-all-songs-from-playlist', methods=['GET'])
-def get_all_songs_from_playlist() -> Response:
+@app.route('/api/get-forecast-for-favorites/<str:location_name>',methods=['GET'])
+def get_forecast_for_favorites(name)-> Response:
     """
-    Route to retrieve all songs in the playlist.
-
+    get weather forecast for favorite locations.
+    Args:
+        Name(str):The name of the favorite location to get its weather forecast.
     Returns:
-        JSON response with the list of songs or an error message.
+        JSON response with the weather forecast of the favorite location.
+    Raises:
+        500 error if there is an issue getting forecast of  weather for the favorite location.
     """
     try:
-        app.logger.info("Retrieving all songs from the playlist")
+        app.logger.info('Getting forecast for %s',name)
+        favorites_model.get_location_by_name_in_favorites(name)
+        pos=requests.get('http://api.openweathermap.org/geo/1.0/direct',params={'appid':os.getenv('OPENWEATHER_APIKEY'),'q':name})
+        data=pos.json()
+        if len(data) == 0:
+            return make_response(jsonify({'error': "Name is not a valid location"}),500)
+        lat = data[0]["lat"]
+        lon = data[0]["lon"]
+        req=request.get('https://pro.openweathermap.org/data/2.5/forecast/hourly',params={'appid':os.getenv('OPENWEATHER_APIKEY'),'lon':lon,'lat':lat,'type':'hour'})
+        data=req.json()
+        return make_response(data,200)
+    except Exception as e:
+        app.logger.error(f"Error getting forecasts for favorites: {e}")
+        return make_response(jsonify({'error': str(e)}), 500)
+ 
+@app.route('/api/get-weather-for-all-favorites/',methods=['GET'])
+def get_weather_for_all_favorites()-> Response:
+    """
+    get weather for all favorite locations.
+    Args:
+        Name(str):The name of all favorite locations to get thier weather.
+    Returns:
+        JSON response with the weather of all the favorite weathers.
+    Raises:
+        500 error if there is an issue getting  weather for all the favorite locations.
+    """
+    try:
+        app.logger.info('Getting weather for all favorites')
+        favorites= favorites_model.get_all_favorites()
+        ret=[]
+        for name in favorites:
+            pos=requests.get('http://api.openweathermap.org/geo/1.0/direct',params={'appid':os.getenv('OPENWEATHER_APIKEY'),'q':name})
+            data=pos.json()
+            if len(data) == 0:
+                return make_response(jsonify({'error': "Name is not a valid location"}),500)
+            lat = data[0]["lat"]
+            lon = data[0]["lon"]
+            req=request.get('https://pro.openweathermap.org/data/2.5/forecast/hourly',params={'appid':os.getenv('OPENWEATHER_APIKEY'),'lon':lon,'lat':lat,'type':'hour'})
+            data=req.json()
+            ret.append(data)
+        return make_response(ret,200)
+    except Exception as e:
+        app.logger.error(f"Error getting weather for all favorite locations: {e}")
+        return make_response(jsonify({'error': str(e)}), 500)
+    
+
+
+@app.route('/api/get-all-locations-from-favorites', methods=['GET'])
+def get_all_locations_from_favorites() -> Response:
+    """
+    Route to retrieve all locations in the favorites.
+
+    Returns:
+        JSON response with the list of locations or an error message.
+    """
+    try:
+        app.logger.info("Retrieving all locations from favorites")
 
         # Get all songs from the playlist
-        songs = playlist_model.get_all_songs()
+        locations = favorites_model.get_all_favorites()
 
-        return make_response(jsonify({'status': 'success', 'songs': songs}), 200)
+        return make_response(jsonify({'status': 'success', 'locations': locations}), 200)
 
     except Exception as e:
-        app.logger.error(f"Error retrieving songs from playlist: {e}")
+        app.logger.error(f"Error retrieving all locations from favorites: {e}")
         return make_response(jsonify({'error': str(e)}), 500)
 
 
