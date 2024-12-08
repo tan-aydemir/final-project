@@ -150,6 +150,45 @@ def get_location_by_id(location_id: int) -> Location:
         logger.error("Database error while retrieving location by ID %s: %s", location_id, str(e))
         raise e
 
+def get_location_by_name(location_name: int) -> Location:
+    """
+    Retrieves a location from the catalog by its location name.
+
+    Args:
+        location_name (str): The name of the location to retrieve from the db 
+
+    Returns:
+        Location: The Location object corresponding to the location_name variable
+
+    Raises:
+        ValueError: If the location isnt found or is marked as deleted.
+    """
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            logger.info("Attempting to retrieve location with ID %s", location_name)
+            cursor.execute("""
+                SELECT id, name, deleted
+                FROM locations
+                WHERE name = ?
+            """, (location_name,))
+            row = cursor.fetchone()
+
+            if row:
+                if row[2]:  # deleted flag
+                    logger.info("Location with name %s has been deleted", location_name)
+                    raise ValueError(f"Location with name {location_name} has been deleted")
+                logger.info("Location with name %s found", location_name)
+                return Location(id=row[0], name=row[1])
+            else:
+                logger.info("Location with name %s not found", location_name)
+                raise ValueError(f"Location with name {location_name} not found")
+
+    except sqlite3.Error as e:
+        logger.error("Database error while retrieving location by name %s: %s", location_name, str(e))
+        raise e
+
+
 def get_all_locations() -> list[dict]:
     """
     Retrieves all locations that are not marked as deleted from the catalog.
