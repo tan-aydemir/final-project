@@ -58,7 +58,7 @@ clear_catalog() {
   curl -s -X DELETE "$BASE_URL/clear-catalog" | grep -q '"status": "success"'
 }
 
-create_location() {
+create_location() { #jayden
   artist=$1
   title=$2
   year=$3
@@ -77,7 +77,7 @@ create_location() {
   fi
 }
 
-delete_location_by_id() {
+delete_location_by_id() { #tan
   location_id=$1
 
   echo "Deleting location by ID ($location_id)..."
@@ -90,7 +90,7 @@ delete_location_by_id() {
   fi
 }
 
-get_all_locations() {
+get_all_locations() { #jayden
   echo "Getting all locations in the favorites..."
   response=$(curl -s -X GET "$BASE_URL/get-all-locations-from-catalog")
   if echo "$response" | grep -q '"status": "success"'; then
@@ -105,7 +105,7 @@ get_all_locations() {
   fi
 }
 
-get_location_by_id() {
+get_location_by_id() { #tan
   location_id=$1
 
   echo "Getting location by ID ($location_id)..."
@@ -122,7 +122,7 @@ get_location_by_id() {
   fi
 }
 
-get_location_by_compound_key() {
+get_location_by_compound_key() { #jayden
   artist=$1
   title=$2
   year=$3
@@ -141,7 +141,7 @@ get_location_by_compound_key() {
   fi
 }
 
-get_random_location() {
+get_random_location() { #tan
   echo "Getting a random location from the catalog..."
   response=$(curl -s -X GET "$BASE_URL/get-random-location")
   if echo "$response" | grep -q '"status": "success"'; then
@@ -163,7 +163,7 @@ get_random_location() {
 #
 ############################################################
 
-add_location_to_favorites() {
+add_location_to_favorites() { #jayden
   artist=$1
   title=$2
   year=$3
@@ -185,7 +185,7 @@ add_location_to_favorites() {
   fi
 }
 
-remove_location_from_favorites() {
+remove_location_from_favorites() { #tan
   artist=$1
   title=$2
   year=$3
@@ -207,7 +207,7 @@ remove_location_from_favorites() {
   fi
 }
 
-remove_location_by_name() {
+remove_location_by_name() { #jayden
   track_number=$1
 
   echo "Removing location by track number: $track_number..."
@@ -221,7 +221,7 @@ remove_location_by_name() {
   fi
 }
 
-clear_playlist() {
+clear_playlist() { #tan
   echo "Clearing favorites..."
   response=$(curl -s -X POST "$BASE_URL/clear-favorites")
 
@@ -241,7 +241,7 @@ clear_playlist() {
 ############################################################
 
 
-get_all_locations_from_playlist() {
+get_all_locations_from_playlist() { #jayden
   echo "Retrieving all locations from favorites..."
   response=$(curl -s -X GET "$BASE_URL/get-all-locations-from-favorites")
 
