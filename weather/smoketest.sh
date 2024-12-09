@@ -59,23 +59,73 @@ clear_catalog() {
 }
 
 create_location() { #jayden
-  artist=$1
-  title=$2
-  year=$3
-  genre=$4
-  duration=$5
+  name=$1
 
-  echo "Adding location ($artist - $title, $year) to the favorites..."
-  curl -s -X POST "$BASE_URL/create-location" -H "Content-Type: application/json" \
-    -d "{\"artist\":\"$artist\", \"title\":\"$title\", \"year\":$year, \"genre\":\"$genre\", \"duration\":$duration}" | grep -q '"status": "success"'
+  echo "Adding location ($name) to the catalog..."
+  response=$(curl -s -X POST "$BASE_URL/api/create-location" \
+    -H "Content-Type: application/json" \
+    -d "{\"name\":\"$name\"}")
 
-  if [ $? -eq 0 ]; then
-    echo "location added successfully."
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Location added successfully."
   else
-    echo "Failed to add location."
+    echo "Failed to add location. Response: $response"
     exit 1
   fi
 }
+
+login() {
+  username=$1
+  password=$2
+
+  echo "Attempting login for ($username)..."
+  response=$(curl -s -X POST "$BASE_URL/api/login" \
+    -H "Content-Type: application/json" \
+    -d "{\"username\":\"$username\", \"password\":\"$password\"}")
+
+  if echo "$response" | grep -q '"message": "Login successful"'; then
+    echo "Login successful."
+  else
+    echo "Failed to login. Response: $response"
+    exit 1
+  fi
+}
+
+create_account() {
+  username=$1
+  password=$2
+
+  echo "Creating account for ($username)..."
+  response=$(curl -s -X POST "$BASE_URL/api/create-account" \
+    -H "Content-Type: application/json" \
+    -d "{\"username\":\"$username\", \"password\":\"$password\"}")
+
+  if echo "$response" | grep -q '"message": "Account created successfully"'; then
+    echo "Account created successfully."
+  else
+    echo "Failed to create account. Response: $response"
+    exit 1
+  fi
+}
+
+update_password() {
+  username=$1
+  old_password=$2
+  new_password=$3
+
+  echo "Updating password for ($username)..."
+  response=$(curl -s -X POST "$BASE_URL/api/update-password" \
+    -H "Content-Type: application/json" \
+    -d "{\"username\":\"$username\", \"old_password\":\"$old_password\", \"new_password\":\"$new_password\"}")
+
+  if echo "$response" | grep -q '"message": "Password updated successfully"'; then
+    echo "Password updated successfully."
+  else
+    echo "Failed to update password. Response: $response"
+    exit 1
+  fi
+}
+
 
 delete_location_by_id() { #tan
   location_id=$1
@@ -91,16 +141,15 @@ delete_location_by_id() { #tan
 }
 
 get_all_locations() { #jayden
-  echo "Getting all locations in the favorites..."
-  response=$(curl -s -X GET "$BASE_URL/get-all-locations-from-catalog")
+  echo "Retrieving all locations from the catalog..."
+  response=$(curl -s -X GET "$BASE_URL/api/get-all-locations-from-catalog" \
+    -H "Content-Type: application/json")
+
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "All locations retrieved successfully."
-    if [ "$ECHO_JSON" = true ]; then
-      echo "locations JSON:"
-      echo "$response" | jq .
-    fi
+    echo "Successfully retrieved all locations."
+    echo "Response: $response"
   else
-    echo "Failed to get locations."
+    echo "Failed to retrieve locations. Response: $response"
     exit 1
   fi
 }
@@ -122,24 +171,6 @@ get_location_by_id() { #tan
   fi
 }
 
-get_location_by_compound_key() { #jayden
-  artist=$1
-  title=$2
-  year=$3
-
-  echo "Getting location by compound key (Artist: '$artist', Title: '$title', Year: $year)..."
-  response=$(curl -s -X GET "$BASE_URL/get-location-from-catalog-by-compound-key?artist=$(echo $artist | sed 's/ /%20/g')&title=$(echo $title | sed 's/ /%20/g')&year=$year")
-  if echo "$response" | grep -q '"status": "success"'; then
-    echo "location retrieved successfully by compound key."
-    if [ "$ECHO_JSON" = true ]; then
-      echo "location JSON (by compound key):"
-      echo "$response" | jq .
-    fi
-  else
-    echo "Failed to get location by compound key."
-    exit 1
-  fi
-}
 
 get_random_location() { #tan
   echo "Getting a random location from the catalog..."
@@ -164,26 +195,25 @@ get_random_location() { #tan
 ############################################################
 
 add_location_to_favorites() { #jayden
-  artist=$1
-  title=$2
-  year=$3
+  name=$1
 
-  echo "Adding location to favorites: $artist - $title ($year)..."
-  response=$(curl -s -X POST "$BASE_URL/add-location-to-favorites" \
+  echo "Adding location ($name) to favorites..."
+  response=$(curl -s -X POST "$BASE_URL/api/add-location-to-favorites" \
     -H "Content-Type: application/json" \
-    -d "{\"artist\":\"$artist\", \"title\":\"$title\", \"year\":$year}")
+    -d "{\"name\":\"$name\"}")
 
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "location added to favorites successfully."
+    echo "Location added to favorites successfully."
     if [ "$ECHO_JSON" = true ]; then
-      echo "location JSON:"
+      echo "Response JSON:"
       echo "$response" | jq .
     fi
   else
-    echo "Failed to add location to favorites."
+    echo "Failed to add location to favorites. Response: $response"
     exit 1
   fi
 }
+
 
 remove_location_from_favorites() { #tan
   artist=$1
@@ -207,19 +237,26 @@ remove_location_from_favorites() { #tan
   fi
 }
 
-remove_location_by_name() { #jayden
-  track_number=$1
+remove_location_from_favorites() { #jayden
+  name=$1
 
-  echo "Removing location by track number: $track_number..."
-  response=$(curl -s -X DELETE "$BASE_URL/remove-location-from-favorites-by-track-number/$track_number")
+  echo "Removing location ($name) from favorites..."
+  response=$(curl -s -X DELETE "$BASE_URL/api/remove-favorites-from-favorites" \
+    -H "Content-Type: application/json" \
+    -d "{\"name\":\"$name\"}")
 
-  if echo "$response" | grep -q '"status":'; then
-    echo "location removed from favorites by track number ($track_number) successfully."
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Location removed from favorites successfully."
+    if [ "$ECHO_JSON" = true ]; then
+      echo "Response JSON:"
+      echo "$response" | jq .
+    fi
   else
-    echo "Failed to remove location from favorites by track number."
+    echo "Failed to remove location from favorites. Response: $response"
     exit 1
   fi
 }
+
 
 clear_playlist() { #tan
   echo "Clearing favorites..."
@@ -241,18 +278,82 @@ clear_playlist() { #tan
 ############################################################
 
 
-get_all_locations_from_playlist() { #jayden
-  echo "Retrieving all locations from favorites..."
-  response=$(curl -s -X GET "$BASE_URL/get-all-locations-from-favorites")
+get_current_weather_for_favorite() {
+  name=$1
+  echo "Getting current weather for favorite ($name)..."
+  response=$(curl -s -X GET "$BASE_URL/api/get-current-weather-for-favorite/$name")
+
+  # Check if the response is empty or contains an error
+  if echo "$response" | grep -q '"error"'; then
+    echo "Failed to get current weather for $name. Response: $response"
+    exit 1
+  else
+    echo "Successfully retrieved current weather for $name."
+    if [ "$ECHO_JSON" = true ]; then
+      echo "$response" | jq .
+    fi
+  fi
+}
+
+get_history_for_favorites() {
+  name=$1
+  echo "Getting history for favorite ($name)..."
+  response=$(curl -s -X GET "$BASE_URL/api/get-history-for-favorites/$name")
+
+  if echo "$response" | grep -q '"error"'; then
+    echo "Failed to get history for $name. Response: $response"
+    exit 1
+  else
+    echo "Successfully retrieved history for $name."
+    if [ "$ECHO_JSON" = true ]; then
+      echo "$response" | jq .
+    fi
+  fi
+}
+
+get_forecast_for_favorites() {
+  name=$1
+  echo "Getting forecast for favorite ($name)..."
+  response=$(curl -s -X GET "$BASE_URL/api/get-forecast-for-favorites/$name")
+
+  if echo "$response" | grep -q '"error"'; then
+    echo "Failed to get forecast for $name. Response: $response"
+    exit 1
+  else
+    echo "Successfully retrieved forecast for $name."
+    if [ "$ECHO_JSON" = true ]; then
+      echo "$response" | jq .
+    fi
+  fi
+}
+
+get_weather_for_all_favorites() {
+  echo "Getting weather for all favorites..."
+  response=$(curl -s -X GET "$BASE_URL/api/get-weather-for-all-favorites/")
+
+  if echo "$response" | grep -q '"error"'; then
+    echo "Failed to get weather for all favorites. Response: $response"
+    exit 1
+  else
+    echo "Successfully retrieved weather for all favorites."
+    if [ "$ECHO_JSON" = true ]; then
+      echo "$response" | jq .
+    fi
+  fi
+}
+
+get_all_locations_from_favorites() {
+  echo "Getting all locations from favorites..."
+  response=$(curl -s -X GET "$BASE_URL/api/get-all-locations-from-favorites")
 
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "All locations retrieved successfully."
+    echo "All locations retrieved from favorites successfully."
     if [ "$ECHO_JSON" = true ]; then
       echo "locations JSON:"
       echo "$response" | jq .
     fi
   else
-    echo "Failed to retrieve all locations from favorites."
+    echo "Failed to get locations from favorites. Response: $response"
     exit 1
   fi
 }
@@ -262,45 +363,50 @@ get_all_locations_from_playlist() { #jayden
 check_health
 check_db
 
-# Clear the catalog
-clear_catalog
-
 # Create locations
-create_location "The Beatles" "Hey Jude" 1968 "Rock" 180
-create_location "The Rolling Stones" "Paint It Black" 1966 "Rock" 180
-create_location "The Beatles" "Let It Be" 1970 "Rock" 180
-create_location "Queen" "Bohemian Rhapsody" 1975 "Rock" 180
-create_location "Led Zeppelin" "Stairway to Heaven" 1971 "Rock" 180
+# Create multiple locations in the catalog using only the 'name' parameter
+create_location "Boston"
+create_location "Seattle"
+create_location "New York"
+create_location "Los Angeles"
+create_location "Chicago"
 
+# Delete a location by its ID (e.g., Boston might be ID=1)
 delete_location_by_id 1
-get_all_locations
 
+# Get all locations from the catalog
+get_all_locations_from_catalog
+
+# Get a location by its ID (assuming Seattle is ID=2)
 get_location_by_id 2
-get_location_by_compound_key "The Beatles" "Let It Be" 1970
+
+# Get a random location from the catalog
 get_random_location
 
-clear_playlist
+# Clear the entire catalog
+clear_catalog
 
-add_location_to_favorites "The Rolling Stones" "Paint It Black" 1966
-add_location_to_favorites "Queen" "Bohemian Rhapsody" 1975
-add_location_to_favorites "Led Zeppelin" "Stairway to Heaven" 1971
-add_location_to_favorites "The Beatles" "Let It Be" 1970
+# Re-add some locations to the catalog before working with favorites
+create_location "Miami"
+create_location "London"
+create_location "Paris"
+create_location "Tokyo"
 
-remove_location_from_favorites "The Beatles" "Let It Be" 1970
-remove_location_by_name 2
+# Add these locations to favorites by name
+add_location_to_favorites "Miami"
+add_location_to_favorites "London"
+add_location_to_favorites "Paris"
+add_location_to_favorites "Tokyo"
 
-get_all_locations_from_playlist
+# Remove a location from favorites by name
+remove_location_from_favorites "Paris"
 
-add_location_to_favorites "Queen" "Bohemian Rhapsody" 1975
-add_location_to_favorites "The Beatles" "Let It Be" 1970
+# Get all locations from favorites
+get_all_locations_from_favorites
 
-move_location_to_beginning "The Beatles" "Let It Be" 1970
-move_location_to_end "Queen" "Bohemian Rhapsody" 1975
-move_location_to_track_number "Led Zeppelin" "Stairway to Heaven" 1971 2
-swap_locations_in_playlist 1 2
+# Clear all favorites
+clear_favorites
 
-get_all_locations_from_playlist
-get_location_from_playlist_by_track_number 1
 
 
 echo "All tests passed successfully!"
