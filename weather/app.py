@@ -141,7 +141,7 @@ def db_check() -> Response:
 
 ##########################################################
 #
-# Song Management
+# Favorites Management
 #
 ##########################################################
 
@@ -306,7 +306,7 @@ def add_location_to_favorites() -> Response:
         app.logger.error(f"Error adding location to favorites: {e}")
         return make_response(jsonify({'error': str(e)}), 500)
 
-@app.route('/api/remove-favorites-from-favorites', methods=['DELETE'])
+@app.route('/api/remove-location-from-favorites', methods=['DELETE'])
 def remove_location_by_location_name() -> Response:
     """
     Route to remove a location from the favorites by the key (name).
