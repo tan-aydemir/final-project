@@ -215,15 +215,13 @@ add_location_to_favorites() { #jayden
 }
 
 
-remove_location_from_favorites() { #tan
-  artist=$1
-  title=$2
-  year=$3
+remove_location_from_favorites_by_location_name() { #tan
+  location_name=$1
 
-  echo "Removing location from favorites: $artist - $title ($year)..."
+  echo "Removing location from favorites: $location_name..."
   response=$(curl -s -X DELETE "$BASE_URL/remove-location-from-favorites" \
     -H "Content-Type: application/json" \
-    -d "{\"artist\":\"$artist\", \"title\":\"$title\", \"year\":$year}")
+    -d "{\"LocationName\":\"$location_name}")
 
   if echo "$response" | grep -q '"status": "success"'; then
     echo "location removed from favorites successfully."
@@ -237,39 +235,18 @@ remove_location_from_favorites() { #tan
   fi
 }
 
-remove_location_from_favorites() { #jayden
-  name=$1
 
-  echo "Removing location ($name) from favorites..."
-  response=$(curl -s -X DELETE "$BASE_URL/api/remove-favorites-from-favorites" \
-    -H "Content-Type: application/json" \
-    -d "{\"name\":\"$name\"}")
-
-  if echo "$response" | grep -q '"status": "success"'; then
-    echo "Location removed from favorites successfully."
-    if [ "$ECHO_JSON" = true ]; then
-      echo "Response JSON:"
-      echo "$response" | jq .
-    fi
-  else
-    echo "Failed to remove location from favorites. Response: $response"
-    exit 1
-  fi
-}
-
-
-clear_playlist() { #tan
+clear_catalog() { #tan
   echo "Clearing favorites..."
-  response=$(curl -s -X POST "$BASE_URL/clear-favorites")
+  response=$(curl -s -X POST "$BASE_URL/clear-catalog")
 
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "Favorites cleared successfully."
+    echo "Catalog cleared successfully."
   else
-    echo "Failed to clear favorites."
+    echo "Failed to clear catalog."
     exit 1
   fi
 }
-
 
 ############################################################
 #
