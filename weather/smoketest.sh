@@ -74,6 +74,12 @@ create_location() { #jayden
   fi
 }
 
+
+###############
+#
+# Login tests
+#
+################
 login() {
   username=$1
   password=$2
@@ -126,6 +132,7 @@ update_password() {
   fi
 }
 
+#Management Cont.
 
 delete_location_by_id() { #tan
   location_id=$1
@@ -384,6 +391,47 @@ get_all_locations_from_favorites
 # Clear all favorites
 clear_favorites
 
+
+# Test Account Creation
+create_account "testuser" "testpassword"
+
+# Test Duplicate Account Creation (Should not create the same user again)
+create_account "testuser" "testpassword"
+
+# Test Login with Correct Credentials
+login "testuser" "testpassword"
+
+# Test Login with Incorrect Credentials
+echo "Testing login with incorrect password..."
+response=$(curl -s -X POST "$BASE_URL/login" \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"testuser\", \"password\":\"wrongpassword\"}")
+
+if echo "$response" | grep -q '"error": "Invalid credentials"'; then
+  echo "Login failed with incorrect password as expected."
+else
+  echo "Response: $response"
+  exit_with_error "Login test with incorrect password did not behave as expected."
+fi
+
+# Test Password Update
+update_password "testuser" "testpassword" "newpassword"
+
+# Test Login with New Password
+login "testuser" "newpassword"
+
+# Test Login with Old Password (Should Fail)
+echo "Testing login with old password after password update..."
+response=$(curl -s -X POST "$BASE_URL/login" \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"testuser\", \"password\":\"testpassword\"}")
+
+if echo "$response" | grep -q '"error": "Invalid credentials"'; then
+  echo "Login with old password failed as expected after password update."
+else
+  echo "Response: $response"
+  exit_with_error "Login test with old password did not behave as expected."
+fi
 
 
 echo "All tests passed successfully!"
