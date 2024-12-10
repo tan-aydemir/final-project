@@ -236,7 +236,7 @@ def test_validiate_location_name_invalid(favorites_model, sample_Location1):
 
 
 ##################################################
-# Playback Test Cases
+# Other Test Cases
 ##################################################
 
 @pytest.fixture
@@ -251,4 +251,4 @@ def test_go_to_location_number(favorites_model, sample_favorites):
 
     # Going beyond the number of favorites should wrap around
     favorites_model.go_to_location_number(3)
-    assert favorites_model.current_location_number == 1, "Expected to loop back to the beginning of the favorites"
+    assert favorites_model.current_location_number == 1, "Expected to go to the begining of the favorites"
