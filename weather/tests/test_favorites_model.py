@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
-from weather.weather_collection.models.favorites_model import FavoritesModel
-from weather.weather_collection.models.location_model import Location
+from weather_collection.models.favorites_model import FavoritesModel
+from weather_collection.models.location_model import Location
 
 
 @pytest.fixture()
@@ -52,20 +52,27 @@ def test_remove_location_from_favorites_by_location_id(favorites_model, sample_f
     assert len(favorites_model.favorites) == 2
 
     # Assuming remove_Location_by_Location_id exists in the model.
-    favorites_model.remove_Location_by_Location_id(1)
+    favorites_model.remove_location_by_location_id(1)
     assert len(favorites_model.favorites) == 1, f"Expected 1 Location, but got {len(favorites_model.favorites)}"
     assert favorites_model.favorites[0].id == 2, "Expected Location with id 2 to remain"
 
 
 def test_remove_location_by_name(favorites_model, sample_favorites):
     """Test removing a Location from the favorites by location name."""
+    # Add sample favorites to the model
     favorites_model.favorites.extend(sample_favorites)
-    assert len(favorites_model.favorites) == 2
 
-    # Remove 'Boston' by name instead of using an integer.
+    # Ensure favorites list contains the expected number of items before removal
+    assert len(favorites_model.favorites) == 2, (f"Expected 2 locations in favorites, but got {len(favorites_model.favorites)}")
+    assert any(loc.name == "Boston" for loc in favorites_model.favorites), ( "Expected 'Boston' to be in favorites before removal")
+
+    # Remove 'Boston' by name
     favorites_model.remove_location_by_name("Boston")
-    assert len(favorites_model.favorites) == 1, f"Expected 1 Location, but got {len(favorites_model.favorites)}"
-    assert favorites_model.favorites[0].id == 2, "Expected Location with id 2 to remain"
+
+    # Validate the results after removal
+    assert len(favorites_model.favorites) == 1, (f"Expected 1 location in favorites after removal, but got {len(favorites_model.favorites)}")
+    assert all(loc.name != "Boston" for loc in favorites_model.favorites), ("'Boston' should not be in favorites after removal")
+    assert favorites_model.favorites[0].id == 2, ("Expected location with id 2 to remain in favorites after removal")
 
 
 def test_clear_favorites(favorites_model, sample_Location1):
