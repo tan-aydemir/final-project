@@ -2,8 +2,8 @@ from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from flask import Flask, jsonify, make_response, Response, request
 
-from weather.weather_collection.models import location_model
-from weather.weather_collection.models.favorites_model import FavoritesModel
+from weather_collection.models import location_model
+from weather_collection.models.favorites_model import FavoritesModel
 from weather_collection.utils.sql_utils import check_database_connection, check_table_exists
 import requests
 from flask_bcrypt import Bcrypt
