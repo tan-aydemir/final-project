@@ -1,6 +1,6 @@
 import logging
 from typing import List
-from weather.weather_collection.models.location_model import Location
+from weather_collection.models.location_model import Location
 from weather_collection.utils.logger import configure_logger
 
 logger = logging.getLogger(__name__)
