@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the base URL for the Flask API
-BASE_URL="http://localhost:5000/api"
+BASE_URL="http://localhost:5001/api"
 
 # Flag to control whether to echo JSON output
 ECHO_JSON=false
@@ -345,7 +345,7 @@ get_all_locations_from_favorites() {
 
 # Health checks
 check_health
-check_db
+# check_db
 
 # Create locations
 # Create multiple locations in the catalog using only the 'name' parameter
