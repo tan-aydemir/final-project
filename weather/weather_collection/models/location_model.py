@@ -35,7 +35,7 @@ def create_location(name: str) -> None:
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO locations (name) VALUES (?)", (name,))
+            cursor.execute("INSERT INTO favorites (name) VALUES (?)", (name,))
             conn.commit()
             logger.info("Location '%s' created successfully.", name)
     except sqlite3.IntegrityError as e:
@@ -58,7 +58,7 @@ def clear_favorites() -> None:
         sqlite3.Error: If any database error occurs.
     """
     try:
-        with open(os.getenv("SQL_CREATE_TABLE_PATH", "/app/sql/create_location_table.sql"), "r") as fh:
+        with open(os.getenv("SQL_CREATE_TABLE_PATH", "./sql/create_favorites_table.sql"), "r") as fh:
             create_table_script = fh.read()
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -87,7 +87,7 @@ def delete_location(location_id: int) -> None:
             cursor = conn.cursor()
 
             # Check if the location exists and if it's already deleted
-            cursor.execute("SELECT deleted FROM locations WHERE id = ?", (location_id,))
+            cursor.execute("SELECT deleted FROM favorites WHERE id = ?", (location_id,))
             try:
                 deleted = cursor.fetchone()[0]
                 if deleted:
@@ -98,7 +98,7 @@ def delete_location(location_id: int) -> None:
                 raise ValueError(f"Location with id: {location_id} not found")
 
             # Perform the soft delete by setting 'deleted' to TRUE
-            cursor.execute("UPDATE locations SET deleted = TRUE WHERE id = ?", (location_id,))
+            cursor.execute("UPDATE favorites SET deleted = TRUE WHERE id = ?", (location_id,))
             conn.commit()
 
             logger.info("Location with id: %s marked as deleted.", location_id)
@@ -160,7 +160,7 @@ def get_location_by_id(location_id: int) -> Location:
     """
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id, name FROM locations WHERE id = ?", (location_id,))
+        cursor.execute("SELECT id, name FROM favorites WHERE id = ?", (location_id,))
         row = cursor.fetchone()
         
         if row is None:
@@ -189,7 +189,7 @@ def get_location_by_name(location_name: int) -> Location:
             logger.info("Attempting to retrieve location with ID %s", location_name)
             cursor.execute("""
                 SELECT id, name, deleted
-                FROM locations
+                FROM favorites
                 WHERE name = ?
             """, (location_name,))
             row = cursor.fetchone()
