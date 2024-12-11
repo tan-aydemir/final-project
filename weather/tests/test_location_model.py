@@ -7,7 +7,7 @@ import pytest
 from weather_collection.models.location_model import (
     Location,
     create_location,
-    clear_catalog,
+    clear_favorites,
     delete_location,
     get_location_by_id,
     get_all_locations,
@@ -43,7 +43,7 @@ def mock_cursor(mocker):
 ##################################################
 
 def test_create_location(mock_cursor):
-    """Test creating a new location in the catalog."""
+    """Test creating a new location in the favorites."""
     create_location(name="Boston")
     
     expected_query = normalize_whitespace("""
@@ -66,7 +66,7 @@ def test_create_location_duplicate(mock_cursor):
 
 
 def test_delete_location(mock_cursor):
-    """Test soft deleting a location from the catalog by location ID."""
+    """Test soft deleting a location from the favorites by location ID."""
     mock_cursor.fetchone.return_value = [False]  # Simulate location exists and not deleted
 
     delete_location(1)
@@ -83,12 +83,12 @@ def test_delete_location(mock_cursor):
     assert mock_cursor.execute.call_args_list[0][0][1] == (1,)
     assert mock_cursor.execute.call_args_list[1][0][1] == (1,)
 
-def test_clear_catalog(mock_cursor, mocker):
-    """Test clearing the entire Location catalog."""
+def test_clear_favorites(mock_cursor, mocker):
+    """Test clearing the entire Location favorites."""
     mocker.patch.dict('os.environ', {'SQL_CREATE_TABLE_PATH': 'sql/create_location_table.sql'})
     mock_open = mocker.patch('builtins.open', mocker.mock_open(read_data="The body of the create statement"))
     
-    clear_catalog()
+    clear_favorites()
 
     mock_open.assert_called_once_with('sql/create_location_table.sql', 'r')
     mock_cursor.executescript.assert_called_once()
@@ -158,10 +158,10 @@ def test_get_random_location(mock_cursor, mocker):
 
 
 
-def test_get_random_location_empty_catalog(mock_cursor, mocker):
+def test_get_random_location_empty_favorites(mock_cursor, mocker):
     mock_cursor.fetchall.return_value = []
 
-    with pytest.raises(ValueError, match="The location catalog is empty"):
+    with pytest.raises(ValueError, match="The location favorites is empty"):
         get_random_location()
     
     mocker.patch("weather_collection.models.location_model.get_random").assert_not_called()

@@ -177,7 +177,7 @@ def add_location() -> Response:
         return make_response(jsonify({'error': str(e)}), 500)
 
 @app.route('/api/clear-favorites', methods=['DELETE'])
-def clear_catalog() -> Response:
+def clear_favorites() -> Response:
     """
     Route to clear the entire location favorites (recreates the table).
 
@@ -186,7 +186,7 @@ def clear_catalog() -> Response:
     """
     try:
         app.logger.info("Clearing the location favorites")
-        location_model.clear_catalog()
+        location_model.clear_favorites()
         return make_response(jsonify({'status': 'success'}), 200)
     except Exception as e:
         app.logger.error(f"Error clearing favorites: {e}")
@@ -335,25 +335,7 @@ def remove_location_by_location_name() -> Response:
         return make_response(jsonify({'error': str(e)}), 500)
 
 
-@app.route('/api/clear-favorites', methods=['POST'])
-def clear_favorites() -> Response:
-    """
-    Route to clear all locations from the favorites.
 
-    Returns:
-        JSON response indicating success of the operation or an error message.
-    """
-    try:
-        app.logger.info('Clearing the favorites')
-
-        # Clear the entire favorites
-        favorites_model.clear_favorites()
-
-        return make_response(jsonify({'status': 'success', 'message': 'Favorites cleared'}), 200)
-
-    except Exception as e:
-        app.logger.error(f"Error clearing the favorites: {e}")
-        return make_response(jsonify({'error': str(e)}), 500)
 
 ############################################################
 #

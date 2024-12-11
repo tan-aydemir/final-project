@@ -50,7 +50,7 @@ def create_location(name: str) -> None:
         raise
 
 
-def clear_catalog() -> None:
+def clear_favorites() -> None:
     """
     Recreates the locations table, effectively deleting all locations.
 
@@ -65,15 +65,15 @@ def clear_catalog() -> None:
             cursor.executescript(create_table_script)
             conn.commit()
 
-            logger.info("Location catalog cleared successfully.")
+            logger.info("Location favorites cleared successfully.")
 
     except sqlite3.Error as e:
-        logger.error("Database error while clearing catalog: %s", str(e))
+        logger.error("Database error while clearing favorites: %s", str(e))
         raise e
 
 def delete_location(location_id: int) -> None:
     """
-    Soft deletes a location from the catalog by marking it as deleted.
+    Soft deletes a location from the favorites by marking it as deleted.
 
     Args:
         location_id (int): The name of the Location to delete.
@@ -109,7 +109,7 @@ def delete_location(location_id: int) -> None:
 
 # def get_location_by_id(location_id: int) -> Location:
 #     """
-#     Retrieves a location from the catalog by its location id.
+#     Retrieves a location from the favorites by its location id.
 
 #     Args:
 #         location_id (int): The id for the location to receive 
@@ -172,7 +172,7 @@ def get_location_by_id(location_id: int) -> Location:
 
 def get_location_by_name(location_name: int) -> Location:
     """
-    Retrieves a location from the catalog by its location name.
+    Retrieves a location from the favorites by its location name.
 
     Args:
         location_name (str): The name of the location to retrieve from the db 
@@ -211,18 +211,18 @@ def get_location_by_name(location_name: int) -> Location:
 
 def get_all_locations() -> list[dict]:
     """
-    Retrieves all locations that are not marked as deleted from the catalog.
+    Retrieves all locations that are not marked as deleted from the favorites.
 
     Returns:
         list[dict]: A list of dictionaries representing all non-deleted locations.
 
     Logs:
-        Warning: If the catalog is empty.
+        Warning: If the favorites is empty.
     """
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            logger.info("Attempting to retrieve all non-deleted locations from the catalog")
+            logger.info("Attempting to retrieve all non-deleted locations from the favorites")
 
             # Determine the sort order based on the 'sort_by_play_count' flag
             query = """
@@ -235,7 +235,7 @@ def get_all_locations() -> list[dict]:
             rows = cursor.fetchall()
 
             if not rows:
-                logger.warning("The location catalog is empty.")
+                logger.warning("The location favorites is empty.")
                 return []
 
             locations = [
@@ -245,7 +245,7 @@ def get_all_locations() -> list[dict]:
                 }
                 for row in rows
             ]
-            logger.info("Retrieved %d locations from the catalog", len(locations))
+            logger.info("Retrieved %d locations from the favorites", len(locations))
             return locations
 
     except sqlite3.Error as e:
@@ -254,20 +254,20 @@ def get_all_locations() -> list[dict]:
 
 def get_random_location() -> Location:
     """
-    Retrieves a random location from the catalog - A Feature For Feeling Lucky
+    Retrieves a random location from the favorites - A Feature For Feeling Lucky
 
     Returns:
         Location: A randomly selected Location object.
 
     Raises:
-        ValueError: If the catalog is empty.
+        ValueError: If the favorites is empty.
     """
     try:
         all_locations = get_all_locations()
 
         if not all_locations:
-            logger.info("Cannot retrieve random Location because the location catalog is empty.")
-            raise ValueError("The location catalog is empty.")
+            logger.info("Cannot retrieve random Location because the location favorites is empty.")
+            raise ValueError("The location favorites is empty.")
 
         # Get a random index using the random.org API
         random_index = get_random(len(all_locations))

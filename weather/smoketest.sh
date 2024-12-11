@@ -53,15 +53,15 @@ check_db() {
 #
 ##########################################################
 
-clear_catalog() {
+clear_favorites() {
   echo "Clearing Favorites..."
-  curl -s -X DELETE "$BASE_URL/clear-catalog" | grep -q '"status": "success"'
+  curl -s -X DELETE "$BASE_URL/clear-favorites" | grep -q '"status": "success"'
 }
 
 create_location() { #jayden
   name=$1
 
-  echo "Adding location ($name) to the catalog..."
+  echo "Adding location ($name) to the favorites..."
   response=$(curl -s -X POST "$BASE_URL/api/create-location" \
     -H "Content-Type: application/json" \
     -d "{\"name\":\"$name\"}")
@@ -148,8 +148,8 @@ delete_location_by_id() { #tan
 }
 
 get_all_locations() { #jayden
-  echo "Retrieving all locations from the catalog..."
-  response=$(curl -s -X GET "$BASE_URL/api/get-all-locations-from-catalog" \
+  echo "Retrieving all locations from the favorites..."
+  response=$(curl -s -X GET "$BASE_URL/api/get-all-locations-from-favorites" \
     -H "Content-Type: application/json")
 
   if echo "$response" | grep -q '"status": "success"'; then
@@ -165,7 +165,7 @@ get_location_by_id() { #tan
   location_id=$1
 
   echo "Getting location by ID ($location_id)..."
-  response=$(curl -s -X GET "$BASE_URL/get-location-from-catalog-by-id/$location_id")
+  response=$(curl -s -X GET "$BASE_URL/get-location-from-favorites-by-id/$location_id")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "location retrieved successfully by ID ($location_id)."
     if [ "$ECHO_JSON" = true ]; then
@@ -180,7 +180,7 @@ get_location_by_id() { #tan
 
 
 get_random_location() { #tan
-  echo "Getting a random location from the catalog..."
+  echo "Getting a random location from the favorites..."
   response=$(curl -s -X GET "$BASE_URL/get-random-location")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Random location retrieved successfully."
@@ -243,14 +243,14 @@ remove_location_from_favorites_by_location_name() { #tan
 }
 
 
-clear_catalog() { #tan
+clear_favorites() { #tan
   echo "Clearing favorites..."
-  response=$(curl -s -X POST "$BASE_URL/clear-catalog")
+  response=$(curl -s -X POST "$BASE_URL/clear-favorites")
 
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "Catalog cleared successfully."
+    echo "favorites cleared successfully."
   else
-    echo "Failed to clear catalog."
+    echo "Failed to clear favorites."
     exit 1
   fi
 }
@@ -348,7 +348,7 @@ check_health
 check_db
 
 # Create locations
-# Create multiple locations in the catalog using only the 'name' parameter
+# Create multiple locations in the favorites using only the 'name' parameter
 create_location "Boston"
 create_location "Seattle"
 create_location "New York"
@@ -358,19 +358,19 @@ create_location "Chicago"
 # Delete a location by its ID (e.g., Boston might be ID=1)
 delete_location_by_id 1
 
-# Get all locations from the catalog
-get_all_locations_from_catalog
+# Get all locations from the favorites
+get_all_locations_from_favorites
 
 # Get a location by its ID (assuming Seattle is ID=2)
 get_location_by_id 2
 
-# Get a random location from the catalog
+# Get a random location from the favorites
 get_random_location
 
-# Clear the entire catalog
-clear_catalog
+# Clear the entire favorites
+clear_favorites
 
-# Re-add some locations to the catalog before working with favorites
+# Re-add some locations to the favorites before working with favorites
 create_location "Miami"
 create_location "London"
 create_location "Paris"
