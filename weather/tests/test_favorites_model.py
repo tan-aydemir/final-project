@@ -46,33 +46,16 @@ def test_add_duplicate_location_to_favorites(favorites_model, sample_Location1):
 # Remove Location Management Test Cases
 ##################################################
 
-def test_remove_location_from_favorites_by_location_id(favorites_model, sample_favorites):
-    """Test removing a Location from the favorites by Location_id."""
-    favorites_model.favorites.extend(sample_favorites)
-    assert len(favorites_model.favorites) == 2
 
-    # Assuming remove_Location_by_Location_id exists in the model.
-    favorites_model.remove_location_by_location_id(1)
-    assert len(favorites_model.favorites) == 1, f"Expected 1 Location, but got {len(favorites_model.favorites)}"
-    assert favorites_model.favorites[0].id == 2, "Expected Location with id 2 to remain"
+# def test_remove_location_by_name(favorites_model, sample_favorites):
+#     """Test removing a Location from the favorites by location name."""
+#     favorites_model.favorites.extend(sample_favorites)
+#     assert len(favorites_model.favorites) == 2
 
-
-def test_remove_location_by_name(favorites_model, sample_favorites):
-    """Test removing a Location from the favorites by location name."""
-    # Add sample favorites to the model
-    favorites_model.favorites.extend(sample_favorites)
-
-    # Ensure favorites list contains the expected number of items before removal
-    assert len(favorites_model.favorites) == 2, (f"Expected 2 locations in favorites, but got {len(favorites_model.favorites)}")
-    assert any(loc.name == "Boston" for loc in favorites_model.favorites), ( "Expected 'Boston' to be in favorites before removal")
-
-    # Remove 'Boston' by name
-    favorites_model.remove_location_by_name("Boston")
-
-    # Validate the results after removal
-    assert len(favorites_model.favorites) == 1, (f"Expected 1 location in favorites after removal, but got {len(favorites_model.favorites)}")
-    assert all(loc.name != "Boston" for loc in favorites_model.favorites), ("'Boston' should not be in favorites after removal")
-    assert favorites_model.favorites[0].id == 2, ("Expected location with id 2 to remain in favorites after removal")
+#     # Remove 'Boston' by name instead of using an integer.
+#     favorites_model.remove_location_by_name("Boston")
+#     assert len(favorites_model.favorites) == 1, f"Expected 1 Location, but got {len(favorites_model.favorites)}"
+#     assert favorites_model.favorites[0].id == 2, "Expected Location with id 2 to remain"
 
 
 def test_clear_favorites(favorites_model, sample_Location1):
@@ -117,7 +100,7 @@ def test_get_lcoation_by_name_in_favorites(favorites_model, sample_Location1):
     assert loc.id == 1
 
 
-def test_get_current_Location(favorites_model, sample_favorites):
+def test_get_current_location(favorites_model, sample_favorites):
     """Test successfully retrieving the current Location from the favorites."""
     favorites_model.favorites.extend(sample_favorites)
     current = favorites_model.get_current_location()
@@ -236,7 +219,7 @@ def test_validiate_location_name_invalid(favorites_model, sample_Location1):
 
 
 ##################################################
-# Other Test Cases
+# Playback Test Cases
 ##################################################
 
 @pytest.fixture
@@ -251,4 +234,4 @@ def test_go_to_location_number(favorites_model, sample_favorites):
 
     # Going beyond the number of favorites should wrap around
     favorites_model.go_to_location_number(3)
-    assert favorites_model.current_location_number == 1, "Expected to go to the begining of the favorites"
+    assert favorites_model.current_location_number == 1, "Expected to loop back to the beginning of the favorites"

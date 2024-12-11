@@ -23,37 +23,32 @@ class Location:
 
 def create_location(name: str) -> None:
     """
-    Creates a new location in the locations table.
+    Creates a new location in the database.
+
     Args:
-        name (str): Create a new location by name
+        name (str): The name of the location.
 
     Raises:
-        ValueError: If location is invalid.
-        sqlite3.IntegrityError: If a location with the same compound key (location) already exists.
-        sqlite3.Error: For any other database errors.
+        ValueError: If the location name already exists.
+        sqlite3.Error: If any database error occurs.
     """
-    # Validate the required fields
-    if not name or not isinstance(name, str):
-        raise ValueError("Invalid name provided. Name must be a non-empty string.")
-    
     try:
-        # Use the context manager to handle the database connection
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO locations (name)
-                VALUES (?)
-            """, (name))
+            cursor.execute("INSERT INTO locations (name) VALUES (?)", (name,))
             conn.commit()
-
-            logger.info("Location created successfully: %s - %s (%d)", name)
-
+            logger.info("Location '%s' created successfully.", name)
     except sqlite3.IntegrityError as e:
-        logger.error(f"Location [{name}] already exists")
-        raise ValueError(f"Location [{name}] already exists") from e
+        if "UNIQUE constraint failed" in str(e):
+            logger.warning("Attempted to create a duplicate location with name: %s", name)
+            raise ValueError(f"Location with name {name} already exists.")
+        else:
+            logger.error("Database error while creating location: %s", str(e))
+            raise
     except sqlite3.Error as e:
-        logger.error("Database error while creating Location: %s", str(e))
-        raise sqlite3.Error(f"Database error: {str(e)}")
+        logger.error("Database error while creating location: %s", str(e))
+        raise
+
 
 def clear_catalog() -> None:
     """
@@ -99,7 +94,7 @@ def delete_location(location_id: int) -> None:
                     logger.info("Location with id: %s has already been deleted", location_id)
                     raise ValueError(f"Location with id: {location_id} has already been deleted")
             except TypeError:
-                logger.info("Location with id: %s not found", location_id)
+                logger.info("Location with ID: %s not found", location_id)
                 raise ValueError(f"Location with id: {location_id} not found")
 
             # Perform the soft delete by setting 'deleted' to TRUE
@@ -112,43 +107,68 @@ def delete_location(location_id: int) -> None:
         logger.error("Database error while deleting location: %s", str(e))
         raise e
 
+# def get_location_by_id(location_id: int) -> Location:
+#     """
+#     Retrieves a location from the catalog by its location id.
+
+#     Args:
+#         location_id (int): The id for the location to receive 
+
+#     Returns:
+#         Location: The Location object corresponding to the location_id variable
+
+#     Raises:
+#         ValueError: If the location isnt found or is marked as deleted.
+#     """
+#     try:
+#         with get_db_connection() as conn:
+#             cursor = conn.cursor()
+#             logger.info("Attempting to retrieve location with ID %s", location_id)
+#             cursor.execute("""
+#                 SELECT id, name, deleted
+#                 FROM locations
+#                 WHERE id = ?
+#             """, (location_id,))
+#             row = cursor.fetchone()
+
+#             if row:
+#                 if row[2]:  # deleted flag
+#                     logger.info("Location with ID %s has been deleted", location_id)
+#                     raise ValueError(f"Location with ID {location_id} has been deleted")
+#                 logger.info("Location with ID %s found", location_id)
+#                 return Location(id=row[0], name=row[1])
+#             else:
+#                 logger.info("Location with ID %s not found", location_id)
+#                 raise ValueError(f"Location with ID {location_id} not found")
+
+#     except sqlite3.Error as e:
+#         logger.error("Database error while retrieving location by ID %s: %s", location_id, str(e))
+#         raise e
+
 def get_location_by_id(location_id: int) -> Location:
     """
-    Retrieves a location from the catalog by its location id.
+    Fetches a location by its ID.
 
     Args:
-        location_id (int): The id for the location to receive 
+        location_id (int): The ID of the location to fetch.
 
     Returns:
-        Location: The Location object corresponding to the location_id variable
+        Location: A Location object with the specified ID.
 
     Raises:
-        ValueError: If the location isnt found or is marked as deleted.
+        ValueError: If no location is found with the given ID.
     """
-    try:
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            logger.info("Attempting to retrieve location with ID %s", location_id)
-            cursor.execute("""
-                SELECT id, name, deleted
-                FROM locations
-                WHERE id = ?
-            """, (location_id,))
-            row = cursor.fetchone()
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name FROM locations WHERE id = ?", (location_id,))
+        row = cursor.fetchone()
+        
+        if row is None:
+            raise ValueError(f"Location with ID {location_id} not found")
+        
+        return Location(row[0], row[1])
 
-            if row:
-                if row[2]:  # deleted flag
-                    logger.info("Location with ID %s has been deleted", location_id)
-                    raise ValueError(f"Location with ID {location_id} has been deleted")
-                logger.info("Location with ID %s found", location_id)
-                return Location(id=row[0], name=row[1])
-            else:
-                logger.info("Location with ID %s not found", location_id)
-                raise ValueError(f"Location with ID {location_id} not found")
 
-    except sqlite3.Error as e:
-        logger.error("Database error while retrieving location by ID %s: %s", location_id, str(e))
-        raise e
 
 def get_location_by_name(location_name: int) -> Location:
     """
