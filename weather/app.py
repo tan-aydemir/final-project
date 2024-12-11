@@ -120,7 +120,7 @@ def healthcheck() -> Response:
 @app.route('/api/db-check', methods=['GET'])
 def db_check() -> Response:
     """
-    Route to check if the database connection and songs table are functional.
+    Route to check if the database connection and favorites table are functional.
 
     Returns:
         JSON response indicating the database health status.
@@ -131,9 +131,9 @@ def db_check() -> Response:
         app.logger.info("Checking database connection...")
         check_database_connection()
         app.logger.info("Database connection is OK.")
-        app.logger.info("Checking if songs table exists...")
-        check_table_exists("songs")
-        app.logger.info("songs table exists.")
+        app.logger.info("Checking if favorites table exists...")
+        check_table_exists("catalog")
+        app.logger.info("favorites table exists.")
         return make_response(jsonify({'database_status': 'healthy'}), 200)
     except Exception as e:
         return make_response(jsonify({'error': str(e)}), 404)
@@ -486,7 +486,7 @@ def get_all_locations_from_favorites() -> Response:
     try:
         app.logger.info("Retrieving all locations from favorites")
 
-        # Get all songs from the playlist
+        # Get all favorites from the playlist
         locations = favorites_model.get_all_favorites()
 
         return make_response(jsonify({'status': 'success', 'locations': locations}), 200)
