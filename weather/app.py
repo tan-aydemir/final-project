@@ -29,7 +29,7 @@ bcrypt = Bcrypt(app)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Columnn(db.String(80), unique=True, nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=False)
     salt = db.Column(db.String(80), nullable=False)
     hashed_password = db.Column(db.String(120), nullable=False)
     
@@ -362,7 +362,7 @@ def clear_favorites() -> Response:
 ############################################################
 
 
-@app.route('/api/get-current-weather-for-favorite/<str:location_name>',methods=['GET'])
+@app.route('/api/get-current-weather-for-favorite/<string:location_name>',methods=['GET'])
 def get_current_weather_for_favorite(name)-> Response:
     """
     get the current weather for a favorite using name
@@ -389,7 +389,7 @@ def get_current_weather_for_favorite(name)-> Response:
         app.logger.error(f"Error getting weather for favorites: {e}")
         return make_response(jsonify({'error': str(e)}), 500)
 
-@app.route('/api/get-history-for-favorites/<str:location_name>',methods=['GET'])
+@app.route('/api/get-history-for-favorites/<string:location_name>',methods=['GET'])
 def get_history_for_favorites(name)-> Response:
     """
     get the history for favorite locations.
@@ -416,7 +416,7 @@ def get_history_for_favorites(name)-> Response:
         app.logger.error(f"Error getting history for favorites: {e}")
         return make_response(jsonify({'error': str(e)}), 500)
 
-@app.route('/api/get-forecast-for-favorites/<str:location_name>',methods=['GET'])
+@app.route('/api/get-forecast-for-favorites/<string:location_name>',methods=['GET'])
 def get_forecast_for_favorites(name)-> Response:
     """
     get weather forecast for favorite locations.
