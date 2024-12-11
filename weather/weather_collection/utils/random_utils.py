@@ -9,7 +9,7 @@ configure_logger(logger)
 
 def get_random(num_locations: int) -> int:
     """
-    Fetches a random int between 1 and the number of locations in the catalog from random.org.
+    Fetches a random int between 1 and the number of locations in the favorites from random.org.
 
     Returns:
         int: The random number fetched from random.org.
