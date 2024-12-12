@@ -1,5 +1,8 @@
 #!/bin/bash
 
+rm -f db/favorite.db
+rm -f instance/favorite.db
+
 # Load the environment variables from .env file
 if [ -f .env ]; then
     export $(cat .env | xargs)

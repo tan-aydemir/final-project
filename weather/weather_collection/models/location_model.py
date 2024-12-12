@@ -227,7 +227,7 @@ def get_all_locations() -> list[dict]:
             # Determine the sort order based on the 'sort_by_play_count' flag
             query = """
                 SELECT id, name
-                FROM locations
+                FROM favorites
                 WHERE deleted = FALSE
             """
             

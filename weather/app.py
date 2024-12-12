@@ -299,7 +299,7 @@ def add_location_to_favorites() -> Response:
         # Add location to favorites
         favorites_model.add_location_to_favorites(location)
 
-        app.logger.info(f"Location added to favorites: {name} )")
+        app.logger.info(f"Location added to favorites: {name}")
         return make_response(jsonify({'status': 'success', 'message': 'Location added to favorite'}), 201)
 
     except Exception as e:
@@ -319,7 +319,8 @@ def remove_location_by_location_name() -> Response:
     try:
         data = request.get_json()
 
-        name = data.get('name')
+        name = data.get('LocationName')
+        app.logger.info(f"nam={name}")
 
         if not name:
             return make_response(jsonify({'error': 'Invalid input. Name is required.'}), 400)

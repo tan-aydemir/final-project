@@ -24,7 +24,9 @@ def get_random(num_locations: int) -> int:
         # Log the request to random.org
         logger.info("Fetching random number from %s", url)
 
-        response = requests.get(url, timeout=5)
+        headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'}
+
+        response = requests.get(url, timeout=5, headers=headers)
 
         # Check if the request was successful
         response.raise_for_status()

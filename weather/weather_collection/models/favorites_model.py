@@ -75,7 +75,7 @@ class FavoritesModel:
         logger.info("Location with name '%s' has been removed", name)
 
 
-    def remove_location_by_name(self, name: str) -> None:
+    def remove_location_by_name1(self, name: str) -> None:
         """
         Removes a location from the favorites by its name (str).
 
