@@ -22,7 +22,7 @@ favorites_model = FavoritesModel()
 # User Model
 ####################################################
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///weather_api.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///favorites.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
@@ -120,7 +120,7 @@ def healthcheck() -> Response:
 @app.route('/api/db-check', methods=['GET'])
 def db_check() -> Response:
     """
-    Route to check if the database connection and songs table are functional.
+    Route to check if the database connection and favorites table are functional.
 
     Returns:
         JSON response indicating the database health status.
@@ -131,9 +131,9 @@ def db_check() -> Response:
         app.logger.info("Checking database connection...")
         check_database_connection()
         app.logger.info("Database connection is OK.")
-        app.logger.info("Checking if songs table exists...")
-        check_table_exists("songs")
-        app.logger.info("songs table exists.")
+        app.logger.info("Checking if favorites table exists...")
+        check_table_exists("favorites")
+        app.logger.info("favorites table exists.")
         return make_response(jsonify({'database_status': 'healthy'}), 200)
     except Exception as e:
         return make_response(jsonify({'error': str(e)}), 404)
@@ -158,7 +158,7 @@ def add_location() -> Response:
         400 error if input validation fails.
         500 error if there is an issue adding the song to the playlist.
     """
-    app.logger.info('Adding a new location to the catalog')
+    app.logger.info('Adding a new location to favorites')
     try:
         data = request.get_json()
 
@@ -176,20 +176,20 @@ def add_location() -> Response:
         app.logger.error("Failed to add location: %s", str(e))
         return make_response(jsonify({'error': str(e)}), 500)
 
-@app.route('/api/clear-catalog', methods=['DELETE'])
-def clear_catalog() -> Response:
+@app.route('/api/clear-favorites', methods=['DELETE'])
+def clear_favorites() -> Response:
     """
-    Route to clear the entire location catalog (recreates the table).
+    Route to clear the entire location favorites (recreates the table).
 
     Returns:
         JSON response indicating success of the operation or error message.
     """
     try:
-        app.logger.info("Clearing the location catalog")
-        location_model.clear_catalog()
+        app.logger.info("Clearing the location favorites")
+        location_model.clear_favorites()
         return make_response(jsonify({'status': 'success'}), 200)
     except Exception as e:
-        app.logger.error(f"Error clearing catalog: {e}")
+        app.logger.error(f"Error clearing favorites: {e}")
         return make_response(jsonify({'error': str(e)}), 500)
 
 @app.route('/api/delete-location/<int:location_id>', methods=['DELETE'])
@@ -212,17 +212,17 @@ def delete_location(location_id: int) -> Response:
         return make_response(jsonify({'error': str(e)}), 500)
 
 
-@app.route('/api/get-all-locations-from-catalog', methods=['GET'])
+@app.route('/api/get-all-locations-from-favorites', methods=['GET'])
 def get_all_locations() -> Response:
     """
-    Route to retrieve all locations in the catalog (non-deleted).
+    Route to retrieve all locations in the favorites (non-deleted).
 
     Returns:
         JSON response with the list of locations or error message.
     """
     try:
        
-        app.logger.info("Retrieving all locations from the catalog")
+        app.logger.info("Retrieving all locations from the favorites")
         locations = location_model.get_all_locations()
 
         return make_response(jsonify({'status': 'success', 'locations': locations}), 200)
@@ -231,7 +231,7 @@ def get_all_locations() -> Response:
         return make_response(jsonify({'error': str(e)}), 500)
 
 
-@app.route('/api/get-location-from-catalog-by-id/<int:location_id>', methods=['GET'])
+@app.route('/api/get-location-from-favorites-by-id/<int:location_id>', methods=['GET'])
 def get_locations_by_id(location_id: int) -> Response:
     """
     Route to retrieve a location by its ID.
@@ -254,13 +254,13 @@ def get_locations_by_id(location_id: int) -> Response:
 @app.route('/api/get-random-location', methods=['GET'])
 def get_random_location() -> Response:
     """
-    Route to retrieve a random location from the catalog.
+    Route to retrieve a random location from the favorites.
 
     Returns:
         JSON response with the details of a random location or error message.
     """
     try:
-        app.logger.info("Retrieving a random location from the catalog")
+        app.logger.info("Retrieving a random location from the favorites")
         location = location_model.get_random_location()
         return make_response(jsonify({'status': 'success', 'location': location}), 200)
     except Exception as e:
@@ -299,7 +299,7 @@ def add_location_to_favorites() -> Response:
         # Add location to favorites
         favorites_model.add_location_to_favorites(location)
 
-        app.logger.info(f"Location added to favorites: {name} )")
+        app.logger.info(f"Location added to favorites: {name}")
         return make_response(jsonify({'status': 'success', 'message': 'Location added to favorite'}), 201)
 
     except Exception as e:
@@ -319,7 +319,8 @@ def remove_location_by_location_name() -> Response:
     try:
         data = request.get_json()
 
-        name = data.get('name')
+        name = data.get('LocationName')
+        app.logger.info(f"nam={name}")
 
         if not name:
             return make_response(jsonify({'error': 'Invalid input. Name is required.'}), 400)
@@ -335,25 +336,7 @@ def remove_location_by_location_name() -> Response:
         return make_response(jsonify({'error': str(e)}), 500)
 
 
-@app.route('/api/clear-favorites', methods=['POST'])
-def clear_favorites() -> Response:
-    """
-    Route to clear all locations from the favorites.
 
-    Returns:
-        JSON response indicating success of the operation or an error message.
-    """
-    try:
-        app.logger.info('Clearing the favorites')
-
-        # Clear the entire favorites
-        favorites_model.clear_favorites()
-
-        return make_response(jsonify({'status': 'success', 'message': 'Favorites cleared'}), 200)
-
-    except Exception as e:
-        app.logger.error(f"Error clearing the favorites: {e}")
-        return make_response(jsonify({'error': str(e)}), 500)
 
 ############################################################
 #
@@ -486,7 +469,7 @@ def get_all_locations_from_favorites() -> Response:
     try:
         app.logger.info("Retrieving all locations from favorites")
 
-        # Get all songs from the playlist
+        # Get all favorites from the playlist
         locations = favorites_model.get_all_favorites()
 
         return make_response(jsonify({'status': 'success', 'locations': locations}), 200)
@@ -497,4 +480,4 @@ def get_all_locations_from_favorites() -> Response:
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=10001)

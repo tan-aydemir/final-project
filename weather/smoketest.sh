@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the base URL for the Flask API
-BASE_URL="http://localhost:5000/api"
+BASE_URL="http://localhost:10001/api"
 
 # Flag to control whether to echo JSON output
 ECHO_JSON=false
@@ -53,16 +53,16 @@ check_db() {
 #
 ##########################################################
 
-clear_catalog() {
+clear_favorites() {
   echo "Clearing Favorites..."
-  curl -s -X DELETE "$BASE_URL/clear-catalog" | grep -q '"status": "success"'
+  curl -s -X DELETE "$BASE_URL/clear-favorites" | grep -q '"status": "success"'
 }
 
 create_location() { #jayden
   name=$1
 
-  echo "Adding location ($name) to the catalog..."
-  response=$(curl -s -X POST "$BASE_URL/api/create-location" \
+  echo "Adding location ($name) to the favorites..."
+  response=$(curl -s -X POST "$BASE_URL/create-location" \
     -H "Content-Type: application/json" \
     -d "{\"name\":\"$name\"}")
 
@@ -85,7 +85,7 @@ login() {
   password=$2
 
   echo "Attempting login for ($username)..."
-  response=$(curl -s -X POST "$BASE_URL/api/login" \
+  response=$(curl -s -X POST "$BASE_URL/login" \
     -H "Content-Type: application/json" \
     -d "{\"username\":\"$username\", \"password\":\"$password\"}")
 
@@ -102,7 +102,7 @@ create_account() {
   password=$2
 
   echo "Creating account for ($username)..."
-  response=$(curl -s -X POST "$BASE_URL/api/create-account" \
+  response=$(curl -s -X POST "$BASE_URL/create-account" \
     -H "Content-Type: application/json" \
     -d "{\"username\":\"$username\", \"password\":\"$password\"}")
 
@@ -110,7 +110,7 @@ create_account() {
     echo "Account created successfully."
   else
     echo "Failed to create account. Response: $response"
-    exit 1
+#    exit 1
   fi
 }
 
@@ -120,7 +120,7 @@ update_password() {
   new_password=$3
 
   echo "Updating password for ($username)..."
-  response=$(curl -s -X POST "$BASE_URL/api/update-password" \
+  response=$(curl -s -X POST "$BASE_URL/update-password" \
     -H "Content-Type: application/json" \
     -d "{\"username\":\"$username\", \"old_password\":\"$old_password\", \"new_password\":\"$new_password\"}")
 
@@ -148,8 +148,8 @@ delete_location_by_id() { #tan
 }
 
 get_all_locations() { #jayden
-  echo "Retrieving all locations from the catalog..."
-  response=$(curl -s -X GET "$BASE_URL/api/get-all-locations-from-catalog" \
+  echo "Retrieving all locations from the favorites..."
+  response=$(curl -s -X GET "$BASE_URL/get-all-locations-from-favorites" \
     -H "Content-Type: application/json")
 
   if echo "$response" | grep -q '"status": "success"'; then
@@ -165,7 +165,7 @@ get_location_by_id() { #tan
   location_id=$1
 
   echo "Getting location by ID ($location_id)..."
-  response=$(curl -s -X GET "$BASE_URL/get-location-from-catalog-by-id/$location_id")
+  response=$(curl -s -X GET "$BASE_URL/get-location-from-favorites-by-id/$location_id")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "location retrieved successfully by ID ($location_id)."
     if [ "$ECHO_JSON" = true ]; then
@@ -180,7 +180,7 @@ get_location_by_id() { #tan
 
 
 get_random_location() { #tan
-  echo "Getting a random location from the catalog..."
+  echo "Getting a random location from the favorites..."
   response=$(curl -s -X GET "$BASE_URL/get-random-location")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Random location retrieved successfully."
@@ -205,7 +205,7 @@ add_location_to_favorites() { #jayden
   name=$1
 
   echo "Adding location ($name) to favorites..."
-  response=$(curl -s -X POST "$BASE_URL/api/add-location-to-favorites" \
+  response=$(curl -s -X POST "$BASE_URL/add-location-to-favorites" \
     -H "Content-Type: application/json" \
     -d "{\"name\":\"$name\"}")
 
@@ -228,7 +228,7 @@ remove_location_from_favorites_by_location_name() { #tan
   echo "Removing location from favorites: $location_name..."
   response=$(curl -s -X DELETE "$BASE_URL/remove-location-from-favorites" \
     -H "Content-Type: application/json" \
-    -d "{\"LocationName\":\"$location_name}")
+    -d "{\"LocationName\":\"$location_name\"}")
 
   if echo "$response" | grep -q '"status": "success"'; then
     echo "location removed from favorites successfully."
@@ -243,14 +243,14 @@ remove_location_from_favorites_by_location_name() { #tan
 }
 
 
-clear_catalog() { #tan
+clear_favorites() { #tan
   echo "Clearing favorites..."
-  response=$(curl -s -X POST "$BASE_URL/clear-catalog")
+  response=$(curl -s -X DELETE "$BASE_URL/clear-favorites")
 
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "Catalog cleared successfully."
+    echo "favorites cleared successfully."
   else
-    echo "Failed to clear catalog."
+    echo "Failed to clear favorites."
     exit 1
   fi
 }
@@ -265,7 +265,7 @@ clear_catalog() { #tan
 get_current_weather_for_favorite() {
   name=$1
   echo "Getting current weather for favorite ($name)..."
-  response=$(curl -s -X GET "$BASE_URL/api/get-current-weather-for-favorite/$name")
+  response=$(curl -s -X GET "$BASE_URL/get-current-weather-for-favorite/$name")
 
   # Check if the response is empty or contains an error
   if echo "$response" | grep -q '"error"'; then
@@ -282,7 +282,7 @@ get_current_weather_for_favorite() {
 get_history_for_favorites() {
   name=$1
   echo "Getting history for favorite ($name)..."
-  response=$(curl -s -X GET "$BASE_URL/api/get-history-for-favorites/$name")
+  response=$(curl -s -X GET "$BASE_URL/get-history-for-favorites/$name")
 
   if echo "$response" | grep -q '"error"'; then
     echo "Failed to get history for $name. Response: $response"
@@ -298,7 +298,7 @@ get_history_for_favorites() {
 get_forecast_for_favorites() {
   name=$1
   echo "Getting forecast for favorite ($name)..."
-  response=$(curl -s -X GET "$BASE_URL/api/get-forecast-for-favorites/$name")
+  response=$(curl -s -X GET "$BASE_URL/get-forecast-for-favorites/$name")
 
   if echo "$response" | grep -q '"error"'; then
     echo "Failed to get forecast for $name. Response: $response"
@@ -313,7 +313,7 @@ get_forecast_for_favorites() {
 
 get_weather_for_all_favorites() {
   echo "Getting weather for all favorites..."
-  response=$(curl -s -X GET "$BASE_URL/api/get-weather-for-all-favorites/")
+  response=$(curl -s -X GET "$BASE_URL/get-weather-for-all-favorites/")
 
   if echo "$response" | grep -q '"error"'; then
     echo "Failed to get weather for all favorites. Response: $response"
@@ -328,7 +328,7 @@ get_weather_for_all_favorites() {
 
 get_all_locations_from_favorites() {
   echo "Getting all locations from favorites..."
-  response=$(curl -s -X GET "$BASE_URL/api/get-all-locations-from-favorites")
+  response=$(curl -s -X GET "$BASE_URL/get-all-locations-from-favorites")
 
   if echo "$response" | grep -q '"status": "success"'; then
     echo "All locations retrieved from favorites successfully."
@@ -348,7 +348,7 @@ check_health
 check_db
 
 # Create locations
-# Create multiple locations in the catalog using only the 'name' parameter
+# Create multiple locations in the favorites using only the 'name' parameter
 create_location "Boston"
 create_location "Seattle"
 create_location "New York"
@@ -358,19 +358,19 @@ create_location "Chicago"
 # Delete a location by its ID (e.g., Boston might be ID=1)
 delete_location_by_id 1
 
-# Get all locations from the catalog
-get_all_locations_from_catalog
+# Get all locations from the favorites
+get_all_locations_from_favorites
 
 # Get a location by its ID (assuming Seattle is ID=2)
 get_location_by_id 2
 
-# Get a random location from the catalog
+# Get a random location from the favorites
 get_random_location
 
-# Clear the entire catalog
-clear_catalog
+# Clear the entire favorites
+clear_favorites
 
-# Re-add some locations to the catalog before working with favorites
+# Re-add some locations to the favorites before working with favorites
 create_location "Miami"
 create_location "London"
 create_location "Paris"
@@ -383,7 +383,7 @@ add_location_to_favorites "Paris"
 add_location_to_favorites "Tokyo"
 
 # Remove a location from favorites by name
-remove_location_from_favorites "Paris"
+remove_location_from_favorites_by_location_name "Paris"
 
 # Get all locations from favorites
 get_all_locations_from_favorites

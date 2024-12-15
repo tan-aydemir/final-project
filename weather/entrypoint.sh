@@ -1,5 +1,8 @@
 #!/bin/bash
 
+rm -f db/favorite.db
+rm -f instance/favorite.db
+
 # Load the environment variables from .env file
 if [ -f .env ]; then
     export $(cat .env | xargs)
@@ -8,7 +11,7 @@ fi
 # Check if CREATE_DB is true, and run the database creation script if so
 if [ "$CREATE_DB" = "true" ]; then
     echo "Creating the database..."
-    /app/sql/create_db.sh
+    ./sql/create_db.sh
 else
     echo "Skipping database creation."
 fi

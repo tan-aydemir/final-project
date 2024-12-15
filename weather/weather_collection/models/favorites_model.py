@@ -22,8 +22,8 @@ class FavoritesModel:
         Initializes the FavoritesModel with an empty list and the current location set to 1.
         """
         self.current_location_number = 1
-        self.current_location_name = None
         self.favorites: List[Location] = []
+        
 
     ##################################################
     # Location Management Functions
@@ -52,30 +52,30 @@ class FavoritesModel:
 
         self.favorites.append(location)
 
-    def remove_location_by_location_id(self, id: int) -> None:
+    def remove_location_by_name(self, name: str) -> None:
         """
-        Removes a location from the favorites by its id.
+        Removes a location from the favorites by its name.
 
         Args:
-            name (str): The id of the location to remove.
+            name (str): The name of the location to remove.
 
         Raises:
             ValueError: If favorites is empty or the name is invalid.
         """
-        logger.info("Removing location by id: %s", id)
+        logger.info("Removing location by name: %s", name)
         self.check_if_empty()
-        id = self.validate_location_id(id)
-        location_to_remove = next((loc for loc in self.favorites if loc.title == id), None)
+        name = self.validate_location_name(name)
+        location_to_remove = next((loc for loc in self.favorites if loc.name == name), None)
 
         if not location_to_remove:
-            logger.error("Location with id '%s' not found in favorites", id)
-            raise ValueError(f"Location with id '{id}' not found in favorites")
+            logger.error("Location with name '%s' not found in favorites", name)
+            raise ValueError(f"Location with name '{name}' not found in favorites")
 
         self.favorites.remove(location_to_remove)
-        logger.info("Location with id '%s' has been removed", id)
+        logger.info("Location with name '%s' has been removed", name)
 
 
-    def remove_location_by_name(self, name: str) -> None:
+    def remove_location_by_name1(self, name: str) -> None:
         """
         Removes a location from the favorites by its name (str).
 
@@ -85,17 +85,12 @@ class FavoritesModel:
         Raises:
             ValueError: If favorites is empty or the name is invalid.
         """
-        logger.info("Removing location '%s' from favorites", name)
+        logger.info("Removing location %d from favorites", favorites)
         self.check_if_empty()
-        location_to_remove = next((loc for loc in self.favorites if loc.title == name), None)
-
-        if not location_to_remove:
-            logger.error("Location with name '%s' not found in favorites", name)
-            raise ValueError(f"Location with name '{name}' not found in favorites")
-
-        self.favorites.remove(location_to_remove)
-        logger.info("Location '%s' has been removed", name)
-
+        favorites = self.validate_location_name(favorites)
+        favorites_index = favorites - 1
+        logger.info("Removing location: %s", self.favorites[favorites_index].name)
+        del self.favorites[favorites_index]
 
     def clear_favorites(self) -> None:
         """
@@ -146,7 +141,7 @@ class FavoritesModel:
         logger.info("Getting location by name: %s", name)
         self.check_if_empty()
         name = self.validate_location_name(name)
-        location = next((loc for loc in self.favorites if loc.title == name), None)
+        location = next((loc for loc in self.favorites if loc.name == name), None)
 
         if not location:
             logger.error("Location with name '%s' not found in favorites", name)
